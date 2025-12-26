@@ -16,5 +16,5 @@ class StajyerLog(models.Model):
     def _check_puan(self):
         for rec in self:
             if rec.puan is not None and (rec.puan < 0 or rec.puan > 100):
-                raise ValidationError("Stajyer puanı 0 ile 100 arasında olmalıdır")
+                raise ValidationError("Stajyer puanı 0 ile 100 arasında olmalıdır!!!!!!!!!!!!")
             
