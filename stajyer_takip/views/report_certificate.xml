@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="action_report_stajyer_certificate" model="ir.actions.report">
+            <field name="name">Stajyer Sertifikası</field>
+            <field name="model">stajyer.takip</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">stajyer_takip.report_stajyer_certificate_template</field>
+            <field name="report_file">stajyer_takip.report_stajyer_certificate_template</field>
+            <field name="print_report_name">'%s Sertifikası' % object.name</field>
+            <field name="binding_model_id" ref="model_stajyer_takip"/>
+            <field name="binding_type">report</field>
+        </record>
+
+        <template id="report_stajyer_certificate_template">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="o">
+                    <t t-call="web.external_layout">
+                        <div class="page" style="padding: 25px; text-align: center; border: 10px solid #ddd; min-height: 920px; page-break-inside: avoid; width: 100%; margin: 0 auto; box-sizing: border-box; position: relative;">
+                            <br/><br/>
+                            <h1 style="font-size: 44px; font-weight: bold; color: #333; margin-top: 30px; margin-bottom: 30px; text-transform: uppercase;">BAŞARI SERTİFİKASI</h1>
+                            
+                            <p style="font-size: 22px; color: #666; margin-bottom: 15px;">Bu sertifika,</p>
+                            
+                            <h2 style="font-size: 40px; color: #000; border-bottom: 3px solid #333; display: inline-block; padding-bottom: 10px; min-width: 380px; margin-bottom: 30px;">
+                                <t t-esc="o.name"/>
+                            </h2>
+                            
+                            <p style="font-size: 19px; color: #555; max-width: 90%; margin: 0 auto; line-height: 1.5;">
+                                Şirketimiz bünyesindeki staj programını başarıyla tamamladığını belgelemek amacıyla verilmiştir.
+                            </p>
+                            
+                            <br/><br/><br/>
+                            
+                            <div class="row" style="margin-top: 50px;">
+                                <div class="col-6 text-center">
+                                    <p style="font-size: 17px; font-weight: bold; margin-bottom: 8px;">Tarih</p>
+                                    <p style="font-size: 17px;">
+                                        <span t-esc="o.completion_date or o.end_date"/>
+                                    </p>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <p style="font-size: 17px; font-weight: bold; margin-bottom: 8px;">Yetkili İmza</p>
+                                    <img src="/stajyer_takip/static/img/imza.png" style="max-height: 75px; display: block; margin: 0 auto;"/>
+                                    <p style="font-size: 15px; margin-top: 5px;">Emre Ünlütürk</p>
+                                </div>
+                            </div>
+                            
+                            <div style="position: absolute; bottom: 30px; width: 100%; left: 0;">
+                                <img t-att-src="'/report/barcode/?type=%s&amp;value=%s&amp;width=%s&amp;height=%s' % ('QR', 'http://localhost:8069/stajyer/certificate/verify?id=' + str(o.id), 100, 100)"/>
+                                <p style="font-size: 11px; color: #999; margin-top: 4px;">Doğrulama Kodu: <span t-esc="o.id"/></p>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </template>
+
+        <template id="certificate_view" name="Stajyer Sertifika Sayfası">
+            <t t-call="website.layout">
+                <div class="container mt-5 text-center">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="card shadow-lg border-0">
+                                <div class="card-body p-5">
+                                    <i class="fa fa-trophy text-warning mb-4" style="font-size: 80px;"></i>
+                                    <h1 class="mb-3 display-4">Tebrikler!</h1>
+                                    <h3 class="text-muted mb-4"><span t-esc="stajyer.name"/></h3>
+                                    <p class="lead mb-5">
+                                        Staj programını başarıyla tamamladınız. Artık sisteme ve raporlara erişiminiz kapatılmıştır. 
+                                        Aşağıdaki butonu kullanarak Başarı Sertifikanızı indirebilirsiniz.
+                                    </p>
+                                    
+                                    <a t-attf-href="/report/pdf/stajyer_takip.action_report_stajyer_certificate/#{stajyer.id}" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm">
+                                        <i class="fa fa-download mr-2"></i> Sertifikayı İndir
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </template>
+    <template id="certificate_verify" name="Sertifika Doğrulama">
+            <t t-call="website.layout">
+                <div class="container mt-5 text-center">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-success text-white">
+                                    <h4 class="m-0"><i class="fa fa-check-circle"/> Sertifika Doğrulandı</h4>
+                                </div>
+                                <div class="card-body">
+                                    <t t-if="stajyer">
+                                        <h5 class="card-title"><t t-esc="stajyer.name"/></h5>
+                                        <p class="card-text text-muted">Staj Eğitimi Başarıyla Tamamlanmıştır.</p>
+                                        <hr/>
+                                        <div class="text-left">
+                                            <p><strong>Tarih:</strong> <span t-esc="stajyer.end_date"/></p>
+                                            <p><strong>Durum:</strong> <span class="badge badge-success">Tamamlandı</span></p>
+                                        </div>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="alert alert-danger">
+                                            Kayıt Bulunamadı veya Geçersiz.
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </template>
+    </data>
+</odoo>

@@ -1,0 +1,16 @@
+<odoo>
+  <template id="my_stajyer_template" name="Stajyer Bilgilerim" inherit_id="website.layout">
+    <xpath expr="//main" position="inside">
+      <section class="container mt-5">
+        <t t-if="stajyer">
+          <h1>Merhaba, <t t-esc="stajyer.name"/></h1>
+          <p><strong>Departman:</strong> <t t-esc="stajyer.department.name"/></p>
+          <p><strong>Başlama Tarihi:</strong> <t t-esc="stajyer.start_date"/></p>
+        </t>
+        <t t-else="">
+          <h3 style="text-align:center;">Henüz kayıtlı bir stajyer bilginiz bulunamadı.</h3>
+        </t>
+      </section>
+    </xpath>
+  </template>
+</odoo>

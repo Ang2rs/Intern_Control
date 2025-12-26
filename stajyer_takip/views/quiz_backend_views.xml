@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_stajyer_roadmap_progress_tree" model="ir.ui.view">
+        <field name="name">stajyer.roadmap.progress.tree</field>
+        <field name="model">stajyer.roadmap.progress</field>
+        <field name="arch" type="xml">
+            <list string="Quiz Notları" create="false" edit="false" delete="false">
+                <field name="stajyer_id"/>
+                <field name="roadmap_item_id" string="Quiz Konusu"/>
+                <field name="score" widget="progressbar"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-danger="state == 'failed'"/>
+                <field name="date_done"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_stajyer_roadmap_progress_form" model="ir.ui.view">
+        <field name="name">stajyer.roadmap.progress.form</field>
+        <field name="model">stajyer.roadmap.progress</field>
+        <field name="arch" type="xml">
+            <form string="Quiz Detayı" create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="stajyer_id" readonly="1"/>
+                            <field name="roadmap_item_id" string="Quiz Konusu" readonly="1"/>
+                            <field name="date_done" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="score" widget="progressbar" readonly="1"/>
+                            <field name="state" widget="badge" decoration-success="state == 'done'" decoration-danger="state == 'failed'" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Verilen Cevaplar">
+                            <field name="answer_ids" readonly="1">
+                                <list create="false" delete="false" edit="false">
+                                    <field name="question_id"/>
+                                    <field name="selected_option"/>
+                                    <field name="is_correct" widget="boolean_toggle"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_stajyer_roadmap_progress_search" model="ir.ui.view">
+        <field name="name">stajyer.roadmap.progress.search</field>
+        <field name="model">stajyer.roadmap.progress</field>
+        <field name="arch" type="xml">
+            <search string="Quiz Ara">
+                <field name="stajyer_id"/>
+                <field name="roadmap_item_id"/>
+                <field name="state"/>
+                <filter string="Tamamlananlar" name="done" domain="[('state', '=', 'done')]"/>
+                <filter string="Başarısızlar" name="failed" domain="[('state', '=', 'failed')]"/>
+                <group expand="1" string="Group By">
+                    <filter string="Stajyer" name="group_by_stajyer" context="{'group_by': 'stajyer_id'}"/>
+                    <filter string="Durum" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Konu" name="group_by_item" context="{'group_by': 'roadmap_item_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_stajyer_quiz_grades" model="ir.actions.act_window">
+        <field name="name">Quiz Notları</field>
+        <field name="res_model">stajyer.roadmap.progress</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', 'in', ['done', 'failed'])]</field>
+        <field name="search_view_id" ref="view_stajyer_roadmap_progress_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Henüz tamamlanmış bir quiz bulunmuyor.
+            </p>
+        </field>
+    </record>
+</odoo>

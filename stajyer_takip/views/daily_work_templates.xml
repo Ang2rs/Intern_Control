@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="daily_work_page" name="Günlük Çalışma Kaydı">
+        <t t-call="portal.portal_layout">
+            <t t-set="no_breadcrumbs" t-value="True"/>
+            <div class="container mt-4 mb-5">
+                
+                <!-- Yönetici Araçları -->
+                <t t-if="is_admin">
+                    <div class="row justify-content-center mb-4">
+                        <div class="col-12"> 
+                            <div class="card bg-white border-0 shadow-sm rounded-4 overflow-hidden" 
+                                 style="background: linear-gradient(to right, #ffffff, #f8fafc);">
+                                <div class="card-body p-3">
+                                    <div class="row align-items-center g-3">
+                                        <!-- Başlık -->
+                                        <div class="col-md-3 d-flex align-items-center justify-content-center justify-content-md-start">
+                                            <div class="bg-warning text-white rounded-circle p-2 me-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 36px; height: 36px;">
+                                                <i class="fa fa-cogs" style="font-size: 0.9rem;"></i>
+                                            </div>
+                                            <h6 class="mb-0 text-dark fw-bold text-uppercase small" style="font-size: 0.75rem; letter-spacing: 0.5px;">Yönetici Paneli</h6>
+                                        </div>
+                                        
+                                        <!-- Arama Menüsü -->
+                                        <div class="col-md-9 d-flex justify-content-center">
+                                             <form action="/stajyer/daily" method="get" class="w-100 d-flex justify-content-center">
+                                                <input type="hidden" name="date" t-att-value="current_date"/>
+                                                <select name="stajyer_id" class="form-select form-select-sm border-0 bg-light fw-bold text-dark shadow-inset py-1 ps-3 w-100 w-md-50" 
+                                                        onchange="this.form.submit()" 
+                                                        style="border-radius: 6px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.03); font-size: 0.85rem;">
+                                                    <t t-foreach="stajyer_list" t-as="s">
+                                                        <option t-att-value="s.id" t-att-selected="'selected' if (stajyer and s.id==stajyer.id) else False">
+                                                            <t t-esc="s.name"/>
+                                                        </option>
+                                                    </t>
+                                                </select>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3">
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                            <h3 class="mb-0 text-primary text-center text-md-start">
+                                <i class="fa fa-calendar-check-o me-2"></i>Günlük Çalışma Kaydı
+                            </h3>
+
+                            <!-- Tarih Navigasyonu (Hap Tasarım) -->
+                            <div class="d-flex align-items-center justify-content-between bg-white rounded-pill shadow-sm border px-2 py-1 w-100 w-md-auto" style="min-width: 220px; max-width: 350px;">
+                                <a t-att-href="'/stajyer/daily?date=%s&amp;stajyer_id=%s' % (prev_date, stajyer.id if stajyer else '')" 
+                                   class="btn btn-link text-secondary text-decoration-none p-0 d-flex align-items-center justify-content-center rounded-circle hover-bg-light"
+                                   style="width: 32px; height: 32px;">
+                                    <i class="fa fa-chevron-left"></i>
+                                </a>
+                                
+                                <input type="date" 
+                                       class="border-0 bg-transparent text-center shadow-none text-dark fw-bold p-0 flex-grow-1" 
+                                       t-att-value="current_date"
+                                       onchange="window.location.href='/stajyer/daily?date='+this.value+'&amp;stajyer_id='+(new URLSearchParams(window.location.search).get('stajyer_id') || '')"
+                                       style="cursor: pointer; font-size: 1rem; outline: none; width: 100%; height: 100%;"/>
+
+                                <a t-att-href="'/stajyer/daily?date=%s&amp;stajyer_id=%s' % (next_date, stajyer.id if stajyer else '')" 
+                                   class="btn btn-link text-secondary text-decoration-none p-0 d-flex align-items-center justify-content-center rounded-circle hover-bg-light"
+                                   style="width: 32px; height: 32px;">
+                                    <i class="fa fa-chevron-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <t t-if="not stajyer">
+                             <div class="alert alert-warning">
+                                <i class="fa fa-exclamation-triangle"></i> Sisteme kayıtlı stajyer profiliniz bulunamadı.
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <!-- Durum Badge -->
+                            <div class="mb-3 text-end" id="status_badge">
+                                <t t-if="daily_work">
+                                    <span t-if="daily_work.state == 'draft'" class="badge bg-warning text-dark px-3 py-2">Onay Bekliyor</span>
+                                    <span t-if="daily_work.state == 'approved'" class="badge bg-success px-3 py-2">Onaylandı</span>
+                                    <span t-if="daily_work.state == 'rejected'" class="badge bg-danger px-3 py-2">Reddedildi</span>
+                                </t>
+                                <t t-else="">
+                                    <span class="badge bg-secondary px-3 py-2">Kayıt Yok</span>
+                                </t>
+                            </div>
+
+                            <form action="/stajyer/daily/save" method="post" enctype="multipart/form-data">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="date" t-att-value="current_date"/>
+                                <input type="hidden" name="stajyer_id" t-att-value="stajyer.id"/>
+                                
+                                <t t-set="is_editable" t-value="not is_admin and current_date == today"/>
+                                
+                                    <div class="mb-4">
+                                    <label class="form-label fw-bold text-muted">Bugün Neler Yaptınız?</label>
+                                    <textarea name="description" class="form-control" rows="10" 
+                                              placeholder="Bugünkü çalışmalarınızı detaylı bir şekilde buraya yazınız..."
+                                              t-att-readonly="'readonly' if not is_editable else None"
+                                              style="resize: vertical; min-height: 200px; border: 1px solid #ced4da; border-radius: 8px; padding: 15px;"><t t-esc="daily_work.description if daily_work and daily_work.description else ''"/></textarea>
+                                </div>
+                                <div class="mb-4">
+                                     <t t-if="daily_work and daily_work.image">
+                                        <div class="mb-2">
+                                            <label class="form-label fw-bold text-muted d-block">Eklenen Görsel</label>
+                                            <img t-att-src="'data:image/png;base64,%s' % daily_work.image.decode('utf-8')" class="img-fluid rounded border shadow-sm" style="max-height: 400px; object-fit: contain;"/>
+                                        </div>
+                                    </t>
+                                     <t t-if="is_editable">
+                                        <label class="form-label fw-bold text-muted">Görsel Yükle (Opsiyonel)</label>
+                                        <input type="file" name="image" class="form-control" accept="image/*"/>
+                                    </t>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a t-att-href="'/stajyer/daily?stajyer_id=%s' % stajyer.id" class="btn btn-secondary px-4">
+                                        <t t-if="is_editable">İptal</t>
+                                        <t t-else="">Geri</t>
+                                    </a>
+                                    <t t-if="is_editable">
+                                        <button type="submit" class="btn btn-primary px-4">
+                                            <i class="fa fa-save me-2"></i>Kaydet
+                                        </button>
+                                    </t>
+                                </div>
+                            </form>
+                            
+                            <!-- Yönetici İşlem Butonları -->
+                            <t t-if="is_admin and daily_work">
+                                <hr class="my-4"/>
+                                <div class="d-flex justify-content-end gap-2">
+                                <div class="d-flex justify-content-end gap-2">
+                                     <button type="button" id="btn_approve" class="btn btn-success" 
+                                            t-att-onclick="'updateDailyWorkStatus(' + str(daily_work.id) + ', \'approve\')'"
+                                            t-att-disabled="daily_work.state == 'approved'">
+                                        <i class="fa fa-check me-2"></i>Onayla
+                                    </button>
+                                    <button type="button" id="btn_reject" class="btn btn-danger" 
+                                            t-att-onclick="'updateDailyWorkStatus(' + str(daily_work.id) + ', \'reject\')'"
+                                            t-att-disabled="daily_work.state == 'rejected'">
+                                        <i class="fa fa-times me-2"></i>Reddet
+                                    </button>
+                                </div>
+                                </div>
+                            </t>
+                        </t>
+                    </div>
+                    
+                    <div class="card-footer bg-light text-center py-3">
+                         <small class="text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            Girdiğiniz kayıtlar sadece sizin tarafınızdan ve yönetici tarafından görülebilir.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Başarı Mesajı (URL parametresinden) -->
+            <t t-if="request.params.get('saved')">
+                <div class="toast-container position-fixed bottom-0 end-0 p-3">
+                    <div class="toast show align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fa fa-check-circle me-2"></i>Kayıt başarıyla güncellendi!
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                </div>
+            </t>
+            
+            <script type="text/javascript">
+                /* <![CDATA[ */
+                function updateDailyWorkStatus(workId, action) {
+                    var rawData = {
+                        'jsonrpc': '2.0',
+                        'method': 'call',
+                        'params': {
+                            'daily_work_id': workId,
+                            'action': action
+                        },
+                        'id': Math.floor(Math.random() * 1000 * 1000 * 1000)
+                    };
+
+                    fetch('/stajyer/daily/action/json', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(rawData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.result && data.result.success) {
+                             var badgeContainer = document.getElementById('status_badge');
+                             if (badgeContainer) {
+                                 if (data.result.state === 'approved') {
+                                     badgeContainer.innerHTML = '<span class="badge bg-success px-3 py-2">Onaylandı</span>';
+                                 } else {
+                                     badgeContainer.innerHTML = '<span class="badge bg-danger px-3 py-2">Reddedildi</span>';
+                                 }
+                             }
+                             
+                             var btnApprove = document.getElementById('btn_approve');
+                             var btnReject = document.getElementById('btn_reject');
+                             
+                             if (data.result.state === 'approved') {
+                                 if(btnApprove) btnApprove.disabled = true;
+                                 if(btnReject) btnReject.disabled = false;
+                             } else {
+                                 if(btnApprove) btnApprove.disabled = false;
+                                 if(btnReject) btnReject.disabled = true;
+                             }
+                        } else {
+                             var errMsg = 'Bilinmeyen Hata';
+                             if (data.error && data.error.data && data.error.data.message) {
+                                errMsg = data.error.data.message;
+                             } else if (data.result && data.result.error) {
+                                errMsg = data.result.error;
+                             }
+                             alert('İşlem başarısız: ' + errMsg);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Bağlantı hatası.');
+                    });
+                }
+                /* ]]> */
+            </script>
+        </t>
+    </template>
+</odoo>

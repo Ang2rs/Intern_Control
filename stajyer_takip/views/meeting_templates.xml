@@ -1,0 +1,430 @@
+<odoo>
+  <data>
+
+    <!-- Görüşme Oluşturma -->
+    <template id="website_meeting_book" name="Meeting Book">
+      <t t-call="website.layout">
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-6 col-md-8">
+                     <div class="card shadow-lg border-0">
+                        <div class="card-header bg-primary text-white p-4 rounded-top">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                                <h3 class="mb-0 fw-bold text-white text-center text-md-start"><i class="fa fa-calendar-plus-o me-2"></i>Görüşme Ayarla</h3>
+                                <a class="btn btn-sm btn-light text-primary fw-bold w-100 w-md-auto" href="/stajyer/meeting/my">
+                                    <i class="fa fa-list me-1"></i> Listeyi Gör
+                                </a>
+                            </div>
+                            <p class="mb-0 mt-2 opacity-75">Yetkili ile birebir görüşme planlayın.</p>
+                        </div>
+                        
+                        <div class="card-body p-4 p-md-5 bg-white">
+                             <t t-if="error">
+                                <div class="alert alert-warning d-flex align-items-center mb-4 border-warning" role="alert" style="background-color: #fff3cd; color: #856404;">
+                                    <i class="fa fa-exclamation-triangle me-2 fs-5"></i>
+                                    <div class="fw-bold" t-esc="error"/>
+                                </div>
+                            </t>
+                            
+                            <form method="post" action="/stajyer/meeting/book" id="meeting_book_form">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold text-secondary text-uppercase small">Konu Başlığı</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="fa fa-tag text-muted"></i></span>
+                                        <input class="form-control" name="name" type="text" required="required" placeholder="Görüşme konusu..."/>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-secondary text-uppercase small">Tarih</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fa fa-calendar text-muted"></i></span>
+                                            <input class="form-control" name="date" type="date" id="meeting_date"/>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-secondary text-uppercase small">Saat</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fa fa-clock-o text-muted"></i></span>
+                                            <input class="form-control" name="time" type="time" id="meeting_time" step="900"/>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-secondary text-uppercase small">Süre</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fa fa-hourglass-start text-muted"></i></span>
+                                            <select class="form-select" name="duration" id="meeting_duration" style="border-top-left-radius: 0 !important;border-bottom-left-radius: 0 !important;">
+                                                <option value="0.5" selected="selected">30 Dakika</option>
+                                                <option value="1.0">1 Saat</option>
+                                                <option value="2.0">2 Saat</option>
+                                                <option value="3.0">3 Saat</option>
+                                                <option value="4.0">4 Saat</option>
+                                                <option value="5.0">5 Saat</option>
+                                                <option value="6.0">6 Saat</option>
+                                                <option value="7.0">7 Saat</option>
+                                                <option value="8.0">8 Saat</option>
+                                                <option value="9.0">9 Saat</option>
+                                                <option value="10.0">10 Saat</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold text-secondary text-uppercase small">Notlar <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" name="note" rows="4" required="required" placeholder="Eklemek istediğiniz notlar (Zorunlu)..."></textarea>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button class="btn btn-primary py-3 fw-bold shadow-sm" type="submit">
+                                        <i class="fa fa-check-circle me-2"></i>Rezervasyonu Tamamla
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </div>
+
+            <!-- Bildirim Kutusu -->
+            <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050">
+                <div id="validationToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body d-flex align-items-center">
+                            <i class="fa fa-exclamation-circle fa-lg me-2"></i>
+                            <span id="validationToastMsg">Hata mesajı</span>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" col="button" onclick="var t=document.getElementById('validationToast'); t.classList.remove('show');"></button>
+                    </div>
+                </div>
+            </div>
+
+            <script type="text/javascript">
+              <![CDATA[
+              document.addEventListener('DOMContentLoaded', function () {
+                var dateInput = document.getElementById('meeting_date');
+                if (dateInput && !dateInput.value) {
+                  var today = new Date();
+                  var yyyy = today.getFullYear();
+                  var mm = String(today.getMonth() + 1).padStart(2, '0');
+                  var dd = String(today.getDate()).padStart(2, '0');
+                  dateInput.value = yyyy + '-' + mm + '-' + dd;
+                }   
+
+                function showToast(msg) {
+                    var toastEl = document.getElementById('validationToast');
+                    var msgEl = document.getElementById('validationToastMsg');
+                    if (toastEl && msgEl) {
+                        msgEl.textContent = msg;
+                        // Bootstrap toast class manipulation
+                        toastEl.classList.add('show');
+                        // Auto hide after 5 seconds
+                        setTimeout(function() {
+                            toastEl.classList.remove('show');
+                        }, 5000);
+                    } else {
+                        alert(msg);
+                    }
+                }
+
+                var form = document.getElementById('meeting_book_form');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        
+                        var dateVal = form.querySelector('input[name="date"]').value;
+                        var timeVal = form.querySelector('input[name="time"]').value;
+                        var durationVal = form.querySelector('select[name="duration"]').value;
+
+                        if (!dateVal || !timeVal) {
+                             showToast("Lütfen tarih ve saat seçiniz.");
+                             return;
+                        }
+
+                        // AJAX Check
+                        fetch('/stajyer/meeting/check_availability', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                params: {
+                                    date: dateVal,
+                                    time: timeVal,
+                                    duration: durationVal
+                                }
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                // HTTP Status hatasını yakala (404, 403, 500 vb.)
+                                throw new Error('HTTP ' + response.status);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.error) {
+                                 console.error('Odoo System Error:', data.error);
+                                 var errorMsg = data.error.data ? data.error.data.message : data.error.message;
+                                 showToast("Sistem hatası: " + errorMsg);
+                                 return;
+                            }
+
+                            var result = data.result;
+                            if (result) {
+                                if (result.success) {
+                                     form.submit();
+                                } else {
+                                     showToast(result.error || "Bu saat aralığı müsait değil.");
+                                }
+                            } else {
+                                showToast("Sunucudan geçersiz yanıt alındı. Sayfayı yenileyip tekrar deneyin.");
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Fetch Error:', error);
+                            var msg = "Bağlantı hatası: " + error.message;
+                            if (error.message.includes('HTTP 404')) {
+                                msg = "Sunucu yeni kodu henüz görmüyor. Lütfen servisi yeniden başlatın. (Hata: 404)";
+                            }
+                            showToast(msg);
+                        });
+                    });
+                }
+              });
+              ]]>
+            </script>
+      </t>
+    </template>
+
+    <!-- Yönetici/Kullanıcı Görüşmeleri -->
+    <template id="website_meeting_my" name="My Meetings">
+      <t t-call="website.layout">
+        <div class="container py-5">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                <div>
+                    <h2 class="fw-bold text-primary mb-1">Görüşmelerim</h2>
+                    <p class="text-muted mb-0">Planlanmış tüm görüşmeleriniz.</p>
+                </div>
+                <a href="/stajyer/meeting/book" class="btn btn-primary shadow-sm align-self-start align-self-md-auto">
+                    <i class="fa fa-plus-circle me-2"></i>Yeni Görüşme
+                </a>
+            </div>
+
+            <t t-if="not meetings">
+                 <div class="card p-5 text-center border-0 shadow-sm bg-white">
+                    <div class="card-body">
+                        <i class="fa fa-calendar-times-o fa-4x text-muted opacity-25 mb-4"></i>
+                        <h4 class="text-muted">Henüz planlanmış bir görüşmeniz yok.</h4>
+                         <a href="/stajyer/meeting/book" class="btn btn-outline-primary mt-3">Hemen Planla</a>
+                    </div>
+                </div>
+            </t>
+            
+            <div class="row g-4">
+                 <t t-foreach="meetings" t-as="m">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm hover-lift transition-base">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <div class="d-flex flex-column">
+                                         <span class="fs-4 fw-bold text-dark"><t t-esc="m.date.strftime('%d') if m.date else '00'"/></span>
+                                         <small class="text-uppercase text-muted fw-bold"><t t-esc="m.date.strftime('%b') if m.date else 'UNK'"/></small>
+                                    </div>
+                                    
+                                    <div class="text-end">
+                                        <t t-if="m.state == 'accepted'">
+                                            <span class="badge bg-success-soft text-success px-3 py-2 rounded-pill">Kabul Edildi</span>
+                                            <t t-if="m.calendar_event_id and (m.calendar_event_id.videocall_location or m.calendar_event_id.location)">
+                                                <a t-att-href="m.calendar_event_id.videocall_location or m.calendar_event_id.location" target="_blank" class="btn btn-sm btn-primary rounded-pill ms-2 pulse-animation">
+                                                    <i class="fa fa-video-camera me-1"></i> Katıl
+                                                </a>
+                                            </t>
+                                        </t>
+                                        <t t-elif="m.state == 'rejected'">
+                                             <span class="badge bg-danger-soft text-danger px-3 py-2 rounded-pill">Reddedildi</span>
+                                        </t>
+                                        <t t-elif="m.state == 'expired'">
+                                             <span class="badge bg-secondary text-white px-3 py-2 rounded-pill">Süresi Doldu</span>
+                                        </t>
+                                        <t t-elif="m.state == 'completed'">
+                                             <span class="badge bg-info text-white px-3 py-2 rounded-pill">Tamamlandı</span>
+                                        </t>
+                                        <t t-else="">
+                                             <span class="badge bg-warning-soft text-warning px-3 py-2 rounded-pill">Bekleniyor</span>
+                                        </t>
+                                    </div>
+                                </div>
+                                
+                                <h5 class="fw-bold text-dark mb-1"><t t-esc="m.name"/></h5>
+                                <div class="mb-3 text-primary small fw-bold">
+                                    <i class="fa fa-user me-1"></i> <t t-esc="m.user_id.name"/>
+                                </div>
+                                
+                                <div class="mb-3 text-muted">
+                                    <i class="fa fa-clock-o me-2 text-primary"></i>
+                                    <t t-if="m.time">
+                                        <t t-set="start_h" t-value="int(m.time)"/>
+                                        <t t-set="start_m" t-value="int((m.time % 1) * 60)"/>
+                                        
+                                        <t t-set="end_time" t-value="m.time + (m.duration if m.duration else 0.5)"/>
+                                        <t t-set="end_h" t-value="int(end_time)"/>
+                                        <t t-set="end_m" t-value="int((end_time % 1) * 60)"/>
+
+                                        <t t-esc="'{:02d}:{:02d}'.format(start_h, start_m)"/> - <t t-esc="'{:02d}:{:02d}'.format(end_h, end_m)"/>
+                                    </t>
+                                    <t t-else="">Belirtilmedi</t>
+                                </div>
+
+                                <t t-if="m.note">
+                                    <div class="bg-light p-3 rounded-3 small text-muted fst-italic">
+                                        <t t-esc="m.note"/>
+                                    </div>
+                                </t>
+
+                                <!-- Yönetici İşlemleri -->
+                                <t t-if="(is_admin_view or request.env.user.has_group('base.group_system')) and m.state not in ('expired', 'completed')">
+                                    <div class="mt-3 pt-3 border-top d-flex justify-content-end gap-2">
+                                        
+                                        <t t-if="m.state != 'accepted'">
+                                            <form t-attf-action="/stajyer/meeting/#{m.id}/action" method="post">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <input type="hidden" name="action" value="accept"/>
+                                                <button type="submit" class="btn btn-sm btn-success shadow-sm">
+                                                    <i class="fa fa-check me-1"></i>Onayla
+                                                </button>
+                                            </form>
+                                        </t>
+                                        <t t-else="">
+                                             <button class="btn btn-sm btn-success disabled opacity-50" disabled="disabled">
+                                                <i class="fa fa-check me-1"></i>Onaylandı
+                                            </button>
+                                        </t>
+
+                                        <t t-if="m.state != 'rejected'">
+                                            <form t-attf-action="/stajyer/meeting/#{m.id}/action" method="post">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                <input type="hidden" name="action" value="reject"/>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm">
+                                                    <i class="fa fa-times me-1"></i>Reddet
+                                                </button>
+                                            </form>
+                                        </t>
+                                         <t t-else="">
+                                             <button class="btn btn-sm btn-danger disabled opacity-50" disabled="disabled">
+                                                <i class="fa fa-times me-1"></i>Reddedildi
+                                            </button>
+                                        </t>
+
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                 </t>
+            </div>
+        </div>
+      </t>
+    </template>
+
+    <!-- Yönetici Görüşmeleri -->
+    <template id="website_meeting_admin" name="Admin Meetings">
+      <t t-call="website.layout">
+        <div class="container mt-4">
+          <h3>Tüm Görüşmeler</h3>
+
+          <!-- Tamamlananlar -->
+          <h4 class="mt-4 text-info">Tamamlanan Görüşmeler</h4>
+          <t t-foreach="meetings.filtered(lambda m: m.state == 'completed')" t-as="m">
+            <t t-call="stajyer_takip.meeting_card_admin">
+              <t t-set="color" t-value="'info'"/>
+              <t t-set="state_text" t-value="'Tamamlandı'"/>
+            </t>
+          </t>
+
+          <!-- Kabul Edilenler -->
+          <h4 class="mt-4 text-success">Kabul Edilen Görüşmeler</h4>
+          <t t-foreach="meetings.filtered(lambda m: m.state == 'accepted')" t-as="m">
+            <t t-call="stajyer_takip.meeting_card_admin">
+              <t t-set="color" t-value="'success'"/>
+              <t t-set="state_text" t-value="'Kabul Edildi'"/>
+            </t>
+          </t>
+
+          <!-- Reddedilenler -->
+          <h4 class="mt-5 text-danger">Reddedilen Görüşmeler</h4>
+          <t t-foreach="meetings.filtered(lambda m: m.state == 'rejected')" t-as="m">
+            <t t-call="stajyer_takip.meeting_card_admin">
+              <t t-set="color" t-value="'danger'"/>
+              <t t-set="state_text" t-value="'Reddedildi'"/>
+            </t>
+          </t>
+
+          <!-- Süresi Dolanlar -->
+          <h4 class="mt-5 text-secondary">Süresi Dolan Görüşmeler</h4>
+          <t t-foreach="meetings.filtered(lambda m: m.state == 'expired')" t-as="m">
+            <t t-call="stajyer_takip.meeting_card_admin">
+              <t t-set="color" t-value="'secondary'"/>
+              <t t-set="state_text" t-value="'Süresi Doldu'"/>
+            </t>
+          </t>
+
+          <!-- Bekleyenler -->
+          <h4 class="mt-5 text-warning">Bekleyen Görüşmeler</h4>
+          <t t-foreach="meetings.filtered(lambda m: m.state == 'pending')" t-as="m">
+            <t t-call="stajyer_takip.meeting_card_admin">
+              <t t-set="color" t-value="'warning'"/>
+              <t t-set="state_text" t-value="'Bekleniyor'"/>
+            </t>
+          </t>
+
+          <div style="margin-bottom: 100px;"></div>
+        </div>
+      </t>
+    </template>
+
+    <!-- Yönetici kart yapısı -->
+    <template id="meeting_card_admin">
+      <div class="card mb-2" t-att-class="'border-' + color">
+        <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div>
+            <h5 t-esc="m.name"/>
+            <p>
+              <strong>Kullanıcı:</strong> <t t-esc="m.user_id.name"/> |
+              <strong>Tarih:</strong> <t t-esc="m.date"/>
+              <t t-if="m.time">
+                <t t-set="start_h" t-value="int(m.time)"/>
+                <t t-set="start_m" t-value="int((m.time % 1) * 60)"/>
+                
+                <t t-set="end_time" t-value="m.time + 0.5"/>
+                <t t-set="end_h" t-value="int(end_time)"/>
+                <t t-set="end_m" t-value="int((end_time % 1) * 60)"/>
+
+                - <t t-esc="'{:02d}:{:02d}'.format(start_h, start_m)"/> - <t t-esc="'{:02d}:{:02d}'.format(end_h, end_m)"/>
+              </t> |
+              <strong>Durum:</strong> <span t-att-class="'text-' + color" t-esc="state_text"/>
+            </p>
+            <p t-if="m.note"><strong>Not:</strong> <t t-esc="m.note"/></p>
+          </div>
+            <t t-if="m.state not in ('completed', 'expired')">
+                <form method="post" t-att-action="'/stajyer/meeting/%s/action' % m.id" style="display:inline">
+                  <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                  <input type="hidden" name="action" value="accept"/>
+                  <button class="btn btn-success btn-sm" type="submit">Kabul</button>
+                </form>
+                <form method="post" t-att-action="'/stajyer/meeting/%s/action' % m.id" style="display:inline">
+                  <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                  <input type="hidden" name="action" value="reject"/>
+                  <button class="btn btn-danger btn-sm" type="submit">Reddet</button>
+                </form>
+            </t>
+        </div>
+      </div>
+    </template> 
+
+  </data>
+</odoo>

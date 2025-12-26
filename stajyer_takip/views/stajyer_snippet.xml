@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="stajyer_snippets" inherit_id="website.snippets" name="Stajyer Snippets">
+        <xpath expr="//snippets[@id='snippet_groups']" position="inside">
+            <t snippet-group="stajyer_takip" t-snippet="website.s_snippet_group" string="Stajyer Takip" t-thumbnail="/website/static/src/img/snippets_thumbs/s_text_image.svg">
+                <t t-snippet="stajyer_takip.s_stajyer_hero" t-thumbnail="/website/static/src/img/snippets_thumbs/s_text_image.svg"/>
+            </t>
+        </xpath>
+    </template>
+</odoo>

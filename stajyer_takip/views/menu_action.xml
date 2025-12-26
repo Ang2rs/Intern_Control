@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <!-- Root menu -->
+  <menuitem id="menu_stajyer_root" name="Stajyer Takip" sequence="10"/>
+
+  <!-- Stajyerler -->
+  <menuitem id="menu_stajyer_items"
+            name="Stajyerler"
+            parent="menu_stajyer_root"
+            action="action_stajyer"
+            sequence="10"/>
+
+  <!-- Loglar -->
+  <menuitem id="menu_stajyer_logs"
+            name="Loglar"
+            parent="menu_stajyer_root"
+            action="action_stajyer_log"
+            sequence="15"/>
+
+  <!-- Görüşmeler -->
+  <menuitem id="menu_stajyer_meetings"
+            name="Görüşmeler"
+            parent="menu_stajyer_root"
+            action="action_stajyer_meeting"
+            sequence="20"/>
+
+  <!-- Günlük Çalışmalar -->
+  <menuitem id="menu_stajyer_daily_work"
+            name="Günlük Çalışmalar"
+            parent="menu_stajyer_root"
+            action="action_stajyer_daily_work"
+            sequence="30"/>
+
+  <!-- Quiz Notları -->
+  <menuitem id="menu_stajyer_quiz_grades"
+            name="Quiz Notları"
+            parent="menu_stajyer_root"
+            action="action_stajyer_quiz_grades"
+            sequence="40"/>
+
+  <!-- Ayarlar Alt Menüsü -->
+  <menuitem id="menu_stajyer_settings"
+            name="Ayarlar"
+            parent="menu_stajyer_root"
+            sequence="100"/>
+
+  <!-- Yetenekler (Ayarlar altında) -->
+  <menuitem id="menu_stajyer_skills"
+            name="Yetenekler"
+            parent="menu_stajyer_settings"
+            action="action_stajyer_skill"
+            sequence="10"/>
+
+  <!-- Yol Haritası (Ayarlar altında) -->
+  <menuitem id="menu_stajyer_roadmap"
+            name="Yol Haritası"
+            parent="menu_stajyer_settings"
+            action="action_stajyer_roadmap_item"
+            sequence="15"/>
+
+  <!-- Departmanlar (Ayarlar altında) -->
+  <menuitem id="menu_stajyer_departments"
+            name="Departmanlar"
+            parent="menu_stajyer_settings"
+            action="action_stajyer_department"
+            sequence="20"/>
+
+</odoo>

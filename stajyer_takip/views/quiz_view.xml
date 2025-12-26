@@ -1,0 +1,574 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Roadmap Item Form Inherit for Quiz -->
+    <record id="view_stajyer_roadmap_item_form_quiz" model="ir.ui.view">
+        <field name="name">stajyer.roadmap.item.form.quiz</field>
+        <field name="model">stajyer.roadmap.item</field>
+        <field name="inherit_id" ref="stajyer_takip.view_stajyer_roadmap_item_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Quiz Soruları">
+                    <field name="question_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="question_text"/>
+                            <field name="image" widget="image" options="{'size': [50, 50]}"/>
+                            <field name="option1"/>
+                            <field name="option2"/>
+                            <field name="option3"/>
+                            <field name="option4"/>
+                            <field name="correct_answer"/>
+                        </list>
+                        <form>
+                            <group>
+                                <field name="question_text"/>
+                                <field name="image" widget="image"/>
+                                <group>
+                                    <field name="option1"/>
+                                    <field name="option2"/>
+                                </group>
+                                <group>
+                                    <field name="option3"/>
+                                    <field name="option4"/>
+                                </group>
+                                <field name="correct_answer"/>
+                            </group>
+                        </form>
+                    </field>
+                </page>
+            </xpath>
+            <xpath expr="//field[@name='url']" position="after">
+                 <field name="quiz_duration"/>
+            </xpath>
+        </field>
+    </record>
+    <!-- Quiz List Template -->
+    <template id="quiz_list_template" name="Quiz Listesi">
+        <t t-call="website.layout">
+            <div class="container mt-5 mb-5">
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <h2 class="text-primary fw-bold"><i class="fa fa-list-alt me-2"></i>Mevcut Quizler</h2>
+                        <p class="text-muted">Yeteneklerinize uygun quizleri buradan görebilir ve çözebilirsiniz.</p>
+                    </div>
+                </div>
+                
+                <t t-if="not skills_data">
+                    <div class="alert alert-info py-4 text-center">
+                        <i class="fa fa-info-circle fa-2x mb-3"></i>
+                        <h5>Herhangi bir quiz bulunamadı.</h5>
+                        <p>Profilinize yetenek ekleyerek ilgili quizleri görebilirsiniz.</p>
+                        <a href="/stajyer/profile" class="btn btn-primary mt-2">Profile Git</a>
+                    </div>
+                </t>
+                
+                <div class="row">
+                    <t t-foreach="skills_data" t-as="skill_info">
+                        <div class="col-12 mb-4">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white py-3 border-bottom">
+                                    <h5 class="mb-0 text-dark fw-bold">
+                                        <i class="fa fa-star text-warning me-2"></i><t t-esc="skill_info['skill'].name"/>
+                                    </h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush">
+                                        <t t-foreach="skill_info['quizzes']" t-as="quiz">
+                                            <div class="list-group-item p-3 d-flex flex-wrap justify-content-between align-items-center hover-bg-light gap-3">
+                                                <div>
+                                                    <h6 class="mb-1 fw-bold text-primary text-break"><t t-esc="quiz['item'].name"/></h6>
+                                                    <small class="text-muted"><i class="fa fa-clock-o me-1"></i><t t-esc="len(quiz['item'].question_ids)"/> Soru</small>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <t t-if="quiz['status'] == 'done'">
+                                                        <span class="badge bg-success rounded-pill px-3 py-2">
+                                                            <i class="fa fa-check me-1"></i>Başarılı
+                                                        </span>
+                                                        <a t-att-href="'/stajyer/quiz/review?item_id=' + str(quiz['item'].id)" class="btn btn-sm btn-outline-primary" title="Cevapları Gör">
+                                                            <i class="fa fa-eye"></i>
+                                                        </a>
+                                                        <t t-if="request.env.user.has_group('base.group_system')">
+                                                            <a t-att-href="'/stajyer/quiz?item_id=' + str(quiz['item'].id)" class="btn btn-sm btn-outline-secondary" title="Tekrar Çöz">
+                                                                <i class="fa fa-refresh"></i>
+                                                            </a>
+                                                        </t>
+                                                    </t>
+                                                    <t t-elif="quiz['status'] == 'failed'">
+                                                        <span class="badge bg-danger rounded-pill px-3 py-2">
+                                                            <i class="fa fa-times me-1"></i>Başarısız
+                                                        </span>
+                                                        <a t-att-href="'/stajyer/quiz/review?item_id=' + str(quiz['item'].id)" class="btn btn-sm btn-outline-primary" title="Cevapları Gör">
+                                                            <i class="fa fa-eye"></i>
+                                                        </a>
+                                                        <t t-if="request.env.user.has_group('base.group_system')">
+                                                            <a t-att-href="'/stajyer/quiz?item_id=' + str(quiz['item'].id)" class="btn btn-sm btn-outline-secondary" title="Tekrar Çöz">
+                                                                <i class="fa fa-refresh"></i>
+                                                            </a>
+                                                        </t>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <a t-att-href="'/stajyer/quiz?item_id=' + str(quiz['item'].id)" class="btn btn-primary btn-sm px-4 rounded-pill">
+                                                            Başla <i class="fa fa-arrow-right ms-1"></i>
+                                                        </a>
+                                                    </t>
+                                                </div>
+                                            </div>
+                                        </t>
+                                        <t t-if="not skill_info['quizzes']">
+                                            <div class="p-3 text-muted text-center small">
+                                                Bu yetenek için henüz aktif quiz bulunmuyor.
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+             <style>
+                .hover-bg-light:hover { background-color: #f8f9fa; }
+            </style>
+        </t>
+    </template>
+
+    <template id="quiz_page_template" name="Quiz Sayfası">
+        <t t-call="website.layout">
+            <div class="container mt-5 mb-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="card shadow-lg border-0 rounded-lg">
+                            <div class="card-header bg-primary text-white p-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h2 class="mb-0"><i class="fa fa-graduation-cap me-2"></i><t t-esc="item.name"/> Değerlendirmesi</h2>
+                                        <p class="mb-0 mt-2 opacity-75">Bu konuyu tamamlamak için soruları doğru cevaplayın.</p>
+                                    </div>
+                                    <t t-if="item.quiz_duration > 0">
+                                        <div class="bg-white text-primary rounded px-3 py-2 shadow-sm d-flex align-items-center">
+                                            <i class="fa fa-clock-o me-2 fa-lg"></i>
+                                            <span id="quiz-timer" class="fw-bold fs-4" t-att-data-minutes="item.quiz_duration">00:00</span>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                            <div class="card-body p-5">
+                                <form id="quizPageForm">
+                                    <input type="hidden" id="quiz_item_id" t-att-value="item.id"/>
+                                    <t t-foreach="item.question_ids" t-as="q">
+                                        <div class="mb-5 quiz-question">
+                                            <h5 class="fw-bold mb-3 text-dark">
+                                                <span class="badge bg-secondary me-2"><t t-esc="q_index + 1"/></span>
+                                                <t t-esc="q.question_text"/>
+                                            </h5>
+                                            
+                                            <!-- Image Display -->
+                                            <t t-if="q.image">
+                                                <div class="mb-3 text-center">
+                                                    <img t-att-src="'/web/image/stajyer.quiz.question/%s/image' % q.id" class="img-fluid rounded shadow-sm" style="max-height: 300px;"/>
+                                                </div>
+                                            </t>
+
+                                            <div class="ms-4">
+                                                <div class="form-check mb-2 p-3 border rounded hover-shadow-sm cursor-pointer" onclick="selectRadio(this)">
+                                                    <input class="form-check-input" type="radio" t-att-name="'q_' + str(q.id)" t-att-id="'opt_' + str(q.id) + '_1'" value="option1" required="required"/>
+                                                    <label class="form-check-label w-100 cursor-pointer" t-att-for="'opt_' + str(q.id) + '_1'">
+                                                        <span class="fw-bold text-primary">A)</span> <t t-esc="q.option1"/>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-2 p-3 border rounded hover-shadow-sm cursor-pointer" onclick="selectRadio(this)">
+                                                    <input class="form-check-input" type="radio" t-att-name="'q_' + str(q.id)" t-att-id="'opt_' + str(q.id) + '_2'" value="option2"/>
+                                                    <label class="form-check-label w-100 cursor-pointer" t-att-for="'opt_' + str(q.id) + '_2'">
+                                                        <span class="fw-bold text-primary">B)</span> <t t-esc="q.option2"/>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-2 p-3 border rounded hover-shadow-sm cursor-pointer" onclick="selectRadio(this)">
+                                                    <input class="form-check-input" type="radio" t-att-name="'q_' + str(q.id)" t-att-id="'opt_' + str(q.id) + '_3'" value="option3"/>
+                                                    <label class="form-check-label w-100 cursor-pointer" t-att-for="'opt_' + str(q.id) + '_3'">
+                                                        <span class="fw-bold text-primary">C)</span> <t t-esc="q.option3"/>
+                                                    </label>
+                                                </div>
+                                                <div class="form-check mb-2 p-3 border rounded hover-shadow-sm cursor-pointer" onclick="selectRadio(this)">
+                                                    <input class="form-check-input" type="radio" t-att-name="'q_' + str(q.id)" t-att-id="'opt_' + str(q.id) + '_4'" value="option4"/>
+                                                    <label class="form-check-label w-100 cursor-pointer" t-att-for="'opt_' + str(q.id) + '_4'">
+                                                        <span class="fw-bold text-primary">D)</span> <t t-esc="q.option4"/>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </t>
+                                    
+                                    <t t-if="not item.question_ids">
+                                        <div class="alert alert-warning text-center">
+                                            Bu konu için henüz soru hazırlanmamış. Lütfen yöneticinizle iletişime geçin veya direkt tamamlandı butonuna basın.
+                                        </div>
+                                    </t>
+
+                                    <div class="d-grid gap-2 mt-5">
+                                        <button type="button" class="btn btn-success btn-lg py-3 fw-bold text-uppercase shadow-sm" onclick="submitPageQuiz()">
+                                            <i class="fa fa-check-circle me-2"></i> Sınavı Tamamla
+                                        </button>
+                                        <a href="/stajyer/roadmap" class="btn btn-outline-secondary">Vazgeç ve Geri Dön</a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Toast Container (Centered) -->
+            <div class="toast-container position-fixed top-50 start-50 translate-middle p-3" style="z-index: 1050">
+              <div id="liveToast" class="toast align-items-center text-white bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                  <div class="toast-body w-100" id="toastMessage">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <style>
+                .cursor-pointer { cursor: pointer; }
+                .hover-shadow-sm:hover { background-color: #f8f9fa; }
+                .form-check-input:checked + label { color: #0d6efd; }
+                
+                #liveToast {
+                    width: 100% !important;
+                    max-width: 450px !important;
+                }
+                @media (max-width: 576px) {
+                    #liveToast {
+                        max-width: 90vw !important;
+                    }
+                }
+                #liveToast .toast-body {
+                    padding: 1rem !important;
+                    font-size: 1rem;
+                    word-wrap: break-word;
+                }
+            </style>
+
+            <script type="text/javascript"><![CDATA[
+                var timerInterval;
+                
+                document.addEventListener('DOMContentLoaded', function() {
+                    initTimer();
+                });
+
+                function initTimer() {
+                    var timerEl = document.getElementById('quiz-timer');
+                    if (timerEl) {
+                        var minutes = parseInt(timerEl.getAttribute('data-minutes'));
+                        if (minutes > 0) {
+                            var timeLeft = minutes * 60;
+                            updateTimerDisplay(timeLeft, timerEl);
+                            
+                            timerInterval = setInterval(function() {
+                                timeLeft--;
+                                updateTimerDisplay(timeLeft, timerEl);
+                                
+                                if (timeLeft <= 0) {
+                                    clearInterval(timerInterval);
+                                    showToast('Süre doldu! Sınavınız otomatik olarak gönderiliyor...', 'warning');
+                                    submitPageQuiz(true); // true = autoSubmit
+                                } else if (timeLeft <= 30) {
+                                     // Add warning color / animation for last 30 seconds if desired
+                                     timerEl.parentElement.classList.add('text-danger');
+                                     timerEl.parentElement.classList.remove('text-primary');
+                                }
+                            }, 1000);
+                        }
+                    }
+                }
+                
+                function updateTimerDisplay(seconds, el) {
+                    var m = Math.floor(seconds / 60);
+                    var s = seconds % 60;
+                    el.innerText = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+                }
+
+                function selectRadio(div) {
+                    var radio = div.querySelector('input[type="radio"]');
+                    if(radio) radio.checked = true;
+                }
+                
+                function showToast(message, type) {
+                    var toastEl = document.getElementById('liveToast');
+                    var toastBody = document.getElementById('toastMessage');
+                    
+                    // Reset classes
+                    toastEl.className = "toast align-items-center text-white border-0";
+                    
+                    if (type === 'success') {
+                        toastEl.classList.add('bg-success');
+                    } else if (type === 'error') {
+                        toastEl.classList.add('bg-danger');
+                    } else if (type === 'warning') {
+                        toastEl.classList.add('bg-warning');
+                        toastEl.classList.remove('text-white'); // warning is usually light
+                    } else {
+                        toastEl.classList.add('bg-primary');
+                    }
+                    
+                    toastBody.innerHTML = message;
+                    
+                    if (window.bootstrap) {
+                        var toast = new window.bootstrap.Toast(toastEl, { autohide: false }); // Disable autohide for result
+                        toast.show();
+                    } else {
+                        // Fallback: Manual toggle
+                        toastEl.classList.add('show');
+                        // No auto-hide for results
+                    }
+                }
+
+                function submitPageQuiz(autoSubmit) {
+                    if (timerInterval) clearInterval(timerInterval); // Stop timer on submit
+                
+                    var itemId = document.getElementById('quiz_item_id').value;
+                    var form = document.getElementById('quizPageForm');
+                    var answers = {};
+                    var inputs = form.querySelectorAll('input[type="radio"]:checked');
+                    
+                    // Validation loop (skip if autoSubmit)
+                    if (!autoSubmit) {
+                        var allQuestions = document.querySelectorAll('.quiz-question');
+                        if (inputs.length < allQuestions.length) {
+                            showToast('Lütfen tüm soruları cevaplayınız.', 'warning');
+                            // Auto hide warning
+                            setTimeout(function(){
+                                var toastEl = document.getElementById('liveToast');
+                                if(window.bootstrap) {
+                                    var toast = window.bootstrap.Toast.getInstance(toastEl);
+                                    if(toast) toast.hide();
+                                } else {
+                                    toastEl.classList.remove('show');
+                                }
+                            }, 3000);
+                            
+                            // Restart timer if it was stopped temporarily (optional, but here we didn't stop it yet for validation check, only inside submitPageQuiz start)
+                            // Actually we stopped it at start of function. If validation fails, we should restart it? 
+                            // Or better: move clearInterval AFTER validation.
+                            // Let's restart it for now if validation fails
+                             var timerEl = document.getElementById('quiz-timer');
+                             if(timerEl) {
+                                // Re-init timer logic is complex because we lost 'timeLeft'. 
+                                // Ideally validation should happen effectively without stopping timer.
+                                // But since we are here, let's just not stop timer until validation passes.
+                                // FIX: Moved clearInterval down.
+                             }
+                            return; 
+                        }
+                    }
+
+                    // Move clearInterval here
+                    if (timerInterval) clearInterval(timerInterval);
+
+                    inputs.forEach(function(input) {
+                        var qId = input.name.split('_')[1];
+                        answers[qId] = input.value;
+                    });
+
+                    // Disable button
+                    var btn = document.querySelector('button[onclick="submitPageQuiz()"]');
+                    if(btn) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i> Kontrol Ediliyor...';
+                    }
+
+                    fetch('/stajyer/quiz/submit', {
+                        method: 'POST',
+                        body: JSON.stringify({ 
+                             'jsonrpc': '2.0', 
+                             'method': 'call', 
+                             'params': { 
+                                 'item_id': itemId,
+                                 'answers': answers
+                             } 
+                        }),
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        var res = data.result;
+                        if (res) {
+                            var msg = '<div class="text-center">';
+                            var wrongCount = res.total_questions - res.correct_count;
+                            
+                            if (res.success && res.passed) {
+                                msg += '<h4 class="mb-3 border-bottom pb-2">TEBRİKLER!</h4>';
+                                msg += '<p class="fs-5 mb-2">' + res.message + '</p>';
+                            } else {
+                                msg += '<h4 class="mb-3 border-bottom pb-2">BAŞARISIZ!</h4>';
+                                msg += '<p class="fs-5 mb-2">' + res.message + '</p>';
+                                if(btn) btn.innerHTML = '<i class="fa fa-times-circle me-2"></i> Başarısız';
+                            }
+                            
+                            msg += '<div class="row mb-3">';
+                            msg += '<div class="col-6 text-end border-end"><span class="d-block small opacity-75">PUAN</span><span class="fs-4 fw-bold">' + res.score.toFixed(1) + '</span></div>';
+                             msg += '<div class="col-6 text-start"><span class="d-block small opacity-75">D / Y</span><span class="fs-5"><i class="fa fa-check text-white"></i> ' + res.correct_count + ' / <i class="fa fa-times text-white opacity-50"></i> ' + wrongCount + '</span></div>';
+                            msg += '</div>';
+                            
+                            msg += '<div class="spinner-border text-light mb-2" role="status"></div>';
+                            msg += '<p class="small">Yol haritasına yönlendiriliyorsunuz...</p>';
+                            msg += '<a href="/stajyer/roadmap" class="btn btn-light text-dark fw-bold w-100 shadow-sm"><i class="fa fa-arrow-left me-2"></i>Hemen Dön</a>';
+                            msg += '</div>';
+                            
+                            showToast(msg, res.passed ? 'success' : 'error');
+                            
+                            // Auto Redirect
+                            setTimeout(function() {
+                                window.location.href = '/stajyer/roadmap';
+                            }, 3000); // 3 seconds delay
+                            
+                        } else {
+                            showToast('Bir hata oluştu.', 'error');
+                            if(btn) btn.disabled = false;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showToast('Bağlantı hatası.', 'error');
+                        if(btn) btn.disabled = false;
+                    });
+                }
+            ]]></script>
+        </t>
+    </template>
+
+    <template id="quiz_review_template" name="Quiz İnceleme">
+        <t t-call="website.layout">
+            <div class="container mt-5 mb-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="card shadow-lg border-0 rounded-lg">
+                            <div class="card-header bg-white p-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h2 class="mb-0 text-primary"><i class="fa fa-history me-2"></i><t t-esc="item.name"/> <span class="text-muted fw-light">Sonuçları</span></h2>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="d-block text-muted small">Puan</span>
+                                        <span t-attf-class="fs-3 fw-bold #{'text-success' if progress.state == 'done' else 'text-danger'}"><t t-esc="round(progress.score, 1)"/></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-5">
+                                <t t-foreach="item.question_ids" t-as="q">
+                                    <t t-set="u_ans" t-value="user_answers.get(q.id, {})"/>
+                                    <t t-set="u_selected" t-value="u_ans.get('selected')"/>
+                                    <t t-set="is_correct" t-value="u_ans.get('is_correct')"/>
+
+                                    <div class="mb-5 p-3 rounded position-relative" style="background-color: #fcfcfc;">
+                                        <!-- Status Icon -->
+                                        <div class="position-absolute top-0 end-0 mt-2 me-2">
+                                            <t t-if="is_correct">
+                                                <i class="fa fa-check-circle text-success fa-2x"></i>
+                                            </t>
+                                            <t t-else="">
+                                                 <i class="fa fa-times-circle text-danger fa-2x"></i>
+                                            </t>
+                                        </div>
+
+                                        <h5 class="fw-bold mb-3 text-dark pe-5">
+                                            <span class="badge bg-secondary me-2"><t t-esc="q_index + 1"/></span>
+                                            <t t-esc="q.question_text"/>
+                                        </h5>
+                                        
+                                        <!-- Image Display -->
+                                        <t t-if="q.image">
+                                            <div class="mb-3 text-center">
+                                                <img t-att-src="'/web/image/stajyer.quiz.question/%s/image' % q.id" class="img-fluid rounded shadow-sm" style="max-height: 250px;"/>
+                                            </div>
+                                        </t>
+
+                                        <div class="ms-4">
+                                            <!-- Option 1 -->
+                                            <div t-attf-class="form-check mb-2 p-3 border rounded 
+                                                #{'bg-success bg-opacity-10 border-success' if q.correct_answer == 'option1' else ''} 
+                                                #{'bg-danger bg-opacity-10 border-danger' if u_selected == 'option1' and not is_correct else ''}">
+                                                <input class="form-check-input" type="radio" disabled="disabled" t-att-checked="'checked' if u_selected == 'option1' else None"/>
+                                                <label class="form-check-label w-100 fw-bold" style="opacity: 1;">
+                                                    A) <t t-esc="q.option1"/>
+                                                    <t t-if="q.correct_answer == 'option1'">
+                                                        <i class="fa fa-check text-success ms-2"></i> 
+                                                        <t t-if="u_selected == 'option1'">(Doğru - Senin Cevabın)</t>
+                                                        <t t-else="">(Doğru Cevap)</t>
+                                                    </t>
+                                                    <t t-elif="u_selected == 'option1'">
+                                                        <i class="fa fa-times text-danger ms-2"></i> (Senin Cevabın)
+                                                    </t>
+                                                </label>
+                                            </div>
+
+                                            <!-- Option 2 -->
+                                            <div t-attf-class="form-check mb-2 p-3 border rounded 
+                                                #{'bg-success bg-opacity-10 border-success' if q.correct_answer == 'option2' else ''} 
+                                                #{'bg-danger bg-opacity-10 border-danger' if u_selected == 'option2' and not is_correct else ''}">
+                                                <input class="form-check-input" type="radio" disabled="disabled" t-att-checked="'checked' if u_selected == 'option2' else None"/>
+                                                <label class="form-check-label w-100 fw-bold" style="opacity: 1;">
+                                                    B) <t t-esc="q.option2"/>
+                                                    <t t-if="q.correct_answer == 'option2'">
+                                                        <i class="fa fa-check text-success ms-2"></i> 
+                                                        <t t-if="u_selected == 'option2'">(Doğru - Senin Cevabın)</t>
+                                                        <t t-else="">(Doğru Cevap)</t>
+                                                    </t>
+                                                    <t t-elif="u_selected == 'option2'">
+                                                        <i class="fa fa-times text-danger ms-2"></i> (Senin Cevabın)
+                                                    </t>
+                                                </label>
+                                            </div>
+
+                                            <!-- Option 3 -->
+                                            <div t-attf-class="form-check mb-2 p-3 border rounded 
+                                                #{'bg-success bg-opacity-10 border-success' if q.correct_answer == 'option3' else ''} 
+                                                #{'bg-danger bg-opacity-10 border-danger' if u_selected == 'option3' and not is_correct else ''}">
+                                                <input class="form-check-input" type="radio" disabled="disabled" t-att-checked="'checked' if u_selected == 'option3' else None"/>
+                                                <label class="form-check-label w-100 fw-bold" style="opacity: 1;">
+                                                    C) <t t-esc="q.option3"/>
+                                                    <t t-if="q.correct_answer == 'option3'">
+                                                        <i class="fa fa-check text-success ms-2"></i> 
+                                                        <t t-if="u_selected == 'option3'">(Doğru - Senin Cevabın)</t>
+                                                        <t t-else="">(Doğru Cevap)</t>
+                                                    </t>
+                                                    <t t-elif="u_selected == 'option3'">
+                                                        <i class="fa fa-times text-danger ms-2"></i> (Senin Cevabın)
+                                                    </t>
+                                                </label>
+                                            </div>
+
+                                            <!-- Option 4 -->
+                                            <div t-attf-class="form-check mb-2 p-3 border rounded 
+                                                #{'bg-success bg-opacity-10 border-success' if q.correct_answer == 'option4' else ''} 
+                                                #{'bg-danger bg-opacity-10 border-danger' if u_selected == 'option4' and not is_correct else ''}">
+                                                <input class="form-check-input" type="radio" disabled="disabled" t-att-checked="'checked' if u_selected == 'option4' else None"/>
+                                                <label class="form-check-label w-100 fw-bold" style="opacity: 1;">
+                                                    D) <t t-esc="q.option4"/>
+                                                    <t t-if="q.correct_answer == 'option4'">
+                                                        <i class="fa fa-check text-success ms-2"></i> 
+                                                        <t t-if="u_selected == 'option4'">(Doğru - Senin Cevabın)</t>
+                                                        <t t-else="">(Doğru Cevap)</t>
+                                                    </t>
+                                                    <t t-elif="u_selected == 'option4'">
+                                                        <i class="fa fa-times text-danger ms-2"></i> (Senin Cevabın)
+                                                    </t>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </t>
+                                
+                                <div class="mt-5 text-center">
+                                    <a href="/stajyer/roadmap" class="btn btn-outline-primary btn-lg shadow-sm">
+                                        <i class="fa fa-arrow-left me-2"></i>Yol Haritasına Dön
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

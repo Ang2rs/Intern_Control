@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+    <!-- Customize Portal Layout Sidebar -->
+
+
+    <template id="my_account_extra" inherit_id="portal.portal_my_home">
+      <xpath expr="//div[contains(@class,'o_portal_my_home')]" position="inside">
+        
+        <!-- Stajyer kaydını al -->
+        <t t-set="stajyer" t-value="request.env['stajyer.takip'].sudo().search([('user_id', '=', request.env.user.id)], limit=1) or request.env['stajyer.takip'].sudo().search([('email', '=', request.env.user.email)], limit=1)"/>
+        
+        <!-- Konum Doğrulama Kartı -->
+        <section class="portal-location-section mt-4 p-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px;">
+          <h4 class="mb-3" style="color: #333;">
+            <i class="fa fa-map-marker text-primary"></i> Konum Doğrulama
+          </h4>
+
+          <!-- Stajyer bulunamadıysa uyarı göster -->
+          <t t-if="not stajyer">
+            <div class="alert alert-warning">
+              <i class="fa fa-exclamation-triangle"></i> Stajyer kaydınız bulunamadı. Önce stajyer kaydı oluşturmanız gerekiyor.
+            </div>
+          </t>
+
+          <!-- Konum zaten kayıtlıysa sadece başarı mesajı göster -->
+          <t t-elif="stajyer.location_date">
+            <div class="text-center py-4">
+              <div style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); padding: 30px; border-radius: 16px; display: inline-block;">
+                <i class="fa fa-check-circle fa-3x text-success mb-3" style="display: block;"></i>
+                <h4 class="text-success mb-2">Konum Kaydedildi</h4>
+                <div class="mt-3">
+                  <p class="mb-1"><strong>Mesafe:</strong> <span t-esc="'%.2f km' % stajyer.distance_km"/></p>
+                  <p class="mb-1"><strong>Yol Ücreti:</strong> <span t-esc="'%.2f TL' % stajyer.fee_amount"/></p>
+                </div>
+                <p class="text-muted small mb-0 mt-3">
+                  Kayıt Tarihi: <t t-esc="stajyer.location_date"/>
+                </p>
+              </div>
+            </div>
+          </t>
+
+          <!-- Konum kayıtlı değilse formu göster -->
+          <t t-else="">
+            <!-- Form Container -->
+            <div id="location-form-container">
+              <p class="text-muted mb-3">Konumunuzu haritadan seçin veya otomatik olarak alın.</p>
+
+              <!-- Şuanki Konum Bilgisi -->
+              <div class="mb-3">
+                <strong>Şuanki Konumunuz:</strong>
+                <span id="current-location-text" class="text-muted ms-2">Konum bekleniyor...</span>
+              </div>
+
+              <!-- Leaflet Harita -->
+              <div id="leaflet-map" style="height: 300px; border-radius: 10px; border: 1px solid #dee2e6; margin-bottom: 15px;"></div>
+
+              <!-- Butonlar -->
+              <div class="d-flex gap-2 flex-wrap">
+                <button id="get-location-btn" class="btn btn-primary">
+                  <i class="fa fa-crosshairs"></i> Konumu Otomatik Al
+                </button>
+                <button id="save-location-btn" class="btn btn-success" disabled="disabled">
+                  <i class="fa fa-save"></i> Konumu Kaydet
+                </button>
+              </div>
+
+              <!-- Durum Mesajı -->
+              <div id="location-status-msg" class="mt-3" style="display: none;"></div>
+            </div>
+
+            <!-- Başarı Mesajı - Kayıt sonrası gösterilecek (JS ile) -->
+            <div id="location-success-container" style="display: none;">
+              <div class="text-center py-4">
+                <div style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); padding: 30px; border-radius: 16px; display: inline-block;">
+                  <i class="fa fa-check-circle fa-3x text-success mb-3" style="display: block;"></i>
+                  <h4 class="text-success mb-2">Konum Kaydedildi</h4>
+                  <div class="mt-3">
+                    <p class="mb-1"><strong>Mesafe:</strong> <span id="saved-distance-text"></span></p>
+                    <p class="mb-1"><strong>Yol Ücreti:</strong> <span id="saved-fee-text"></span></p>
+                  </div>
+                  <p class="text-muted small mb-0 mt-3" id="saved-date-text"></p>
+                </div>
+              </div>
+            </div>
+          </t>
+
+        </section>
+
+        <script type="text/javascript"><![CDATA[
+          (function() {
+            var portalMap = null;
+            var portalMarker = null;
+            var accuracyCircle = null;
+            var selectedLat = null;
+            var selectedLng = null;
+            var selectedAcc = null;
+
+            function loadLeaflet(callback) {
+              if (typeof L !== 'undefined') {
+                callback();
+                return;
+              }
+              
+              var css = document.createElement('link');
+              css.rel = 'stylesheet';
+              css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+              document.head.appendChild(css);
+
+              var script = document.createElement('script');
+              script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+              script.onload = callback;
+              script.onerror = function() { console.error('Leaflet script yüklenemedi'); };
+              document.head.appendChild(script);
+            }
+
+            function initMap() {
+              var mapEl = document.getElementById('leaflet-map');
+              if (!mapEl) return;
+
+              // Marker ikonu düzeltme
+              var DefaultIcon = L.icon({
+                iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41]
+              });
+              L.Marker.prototype.options.icon = DefaultIcon;
+
+              portalMap = L.map('leaflet-map').setView([39.9208, 32.8541], 6);
+              L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+              }).addTo(portalMap);
+
+              portalMap.on('click', function(e) {
+                placeMarker(e.latlng.lat, e.latlng.lng, null);
+              });
+
+              setupButtons();
+            }
+
+            function placeMarker(lat, lng, accuracy) {
+              selectedLat = lat;
+              selectedLng = lng;
+              
+              if (portalMarker) {
+                portalMarker.setLatLng([lat, lng]);
+              } else {
+                portalMarker = L.marker([lat, lng]).addTo(portalMap);
+              }
+              
+              // Accuracy Circle
+              if (accuracyCircle) {
+                portalMap.removeLayer(accuracyCircle);
+                accuracyCircle = null;
+              }
+              
+              var accText = "";
+              if (accuracy) {
+                   accuracyCircle = L.circle([lat, lng], {
+                        color: 'blue',
+                        fillColor: '#30f',
+                        fillOpacity: 0.1,
+                        radius: accuracy
+                    }).addTo(portalMap);
+                    
+                    // Zoom to bounds if accuracy is provided (auto-locate)
+                    portalMap.fitBounds(accuracyCircle.getBounds());
+                    
+                    accText = ' <span class="badge bg-info text-dark" style="font-size: 0.8rem;">Hata Payı: ' + Math.round(accuracy) + 'm</span>';
+              }
+              
+              var el = document.getElementById('current-location-text');
+              if (el) el.innerHTML = '<div class="mt-1"><span class="text-success fw-bold">' + lat.toFixed(5) + ', ' + lng.toFixed(5) + '</span>' + accText + '</div><div class="small text-muted fst-italic mt-1"><i class="fa fa-info-circle me-1"></i>Tam konum bu değilse haritadan işaretleyebilirsiniz.</div>';
+              
+              var btn = document.getElementById('save-location-btn');
+              if (btn) btn.disabled = false;
+            }
+
+            function setupButtons() {
+              var getBtn = document.getElementById('get-location-btn');
+              var saveBtn = document.getElementById('save-location-btn');
+
+              if (getBtn) {
+                getBtn.onclick = function() {
+                  if (!navigator.geolocation) { alert('Konum desteklenmiyor'); return; }
+                  getBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Alınıyor...';
+                  getBtn.disabled = true;
+                  
+                  navigator.geolocation.getCurrentPosition(function(pos) {
+                    selectedLat = pos.coords.latitude;
+                    selectedLng = pos.coords.longitude;
+                    selectedAcc = pos.coords.accuracy;
+                    
+                    placeMarker(selectedLat, selectedLng, selectedAcc);
+                    
+                    getBtn.innerHTML = '<i class="fa fa-crosshairs"></i> Konumu Otomatik Al';
+                    getBtn.disabled = false;
+                    
+                  }, function(err) {
+                    alert('Konum alınamadı: ' + err.message + '. Lütfen haritadan manuel seçiniz.');
+                    getBtn.innerHTML = '<i class="fa fa-crosshairs"></i> Konumu Otomatik Al';
+                    getBtn.disabled = false;
+                  }, {
+                      enableHighAccuracy: true, 
+                      timeout: 10000,
+                      maximumAge: 0 
+                  });
+                };
+              }
+
+              if (saveBtn) {
+                saveBtn.onclick = function() {
+                  if (!selectedLat) { alert('Önce konum seçin'); return; }
+                  saveBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Kaydediliyor...';
+                  saveBtn.disabled = true;
+                  fetch('/stajyer/save_location_json', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({jsonrpc:'2.0', method:'call', params:{lat:selectedLat, lng:selectedLng, accuracy:selectedAcc}, id:1})
+                  })
+                  .then(function(r) { return r.json(); })
+                  .then(function(d) {
+                    if (d.result && d.result.success) {
+                      var form = document.getElementById('location-form-container');
+                      var success = document.getElementById('location-success-container');
+                      if (form) form.style.display = 'none';
+                      if (success) success.style.display = 'block';
+                      
+                      // Mesaj içeriğini güncelle
+                      if (d.result.distance) document.getElementById('saved-distance-text').textContent = d.result.distance.toFixed(2) + ' km';
+                      if (d.result.fee) document.getElementById('saved-fee-text').textContent = d.result.fee.toFixed(2) + ' TL';
+                      var dateEl = document.getElementById('saved-date-text');
+                      if (dateEl) dateEl.textContent = 'Kayıt Tarihi: ' + new Date().toLocaleString('tr-TR');
+                    } else {
+                      alert('Hata: ' + (d.result && d.result.error || 'Bilinmeyen'));
+                      saveBtn.innerHTML = '<i class="fa fa-save"></i> Konumu Kaydet';
+                      saveBtn.disabled = false;
+                    }
+                  })
+                  .catch(function(e) {
+                    alert('Bağlantı hatası');
+                    saveBtn.innerHTML = '<i class="fa fa-save"></i> Konumu Kaydet';
+                    saveBtn.disabled = false;
+                  });
+                };
+              }
+            }
+
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', function() {
+                loadLeaflet(initMap);
+              });
+            } else {
+              loadLeaflet(initMap);
+            }
+          })();
+        ]]></script>
+
+        <style>
+          .portal-location-section .gap-2 { gap: 0.5rem; }
+          .portal-location-section .ms-2 { margin-left: 0.5rem; }
+        </style>
+
+      </xpath>
+    </template>
+
+    <!-- Hide Contact Details for Stajyer -->
+    <template id="portal_contact_stajyer_inherit" inherit_id="portal.portal_contact">
+        <xpath expr="//div[hasclass('o_portal_contact_details')]" position="replace">
+            <t t-set="is_stajyer" t-value="request.env['stajyer.takip'].sudo().search([('user_id', '=', request.env.user.id)], limit=1)"/>
+            
+            <t t-if="is_stajyer">
+                 <div class="o_portal_contact_details mb-5">
+                    <t t-if="title">
+                        <h4><t t-esc="title"/></h4>
+                        <hr class="mt-1 mb-3"/>
+                    </t>
+                    <h6 class="mb-1"><b t-esc="sales_user.name"/></h6>
+                    <!-- Sadece isim goster, diger detaylari gizle -->
+                 </div>
+            </t>
+            <t t-else="">
+                 <div class="o_portal_contact_details mb-5">
+                    <h4><t t-esc="title"/></h4>
+                    <hr class="mt-1 mb-3"/>
+                    <h6 class="mb-1"><b t-esc="sales_user.name"/></h6>
+                    <div class="d-flex align-items-center mb-1">
+                        <div class="d-flex flex-column text-muted">
+                            <span t-if="sales_user.company_name" t-esc="sales_user.company_name" class="fw-bold"/>
+                            <div t-field="sales_user" t-options='{"widget": "contact", "fields": ["address", "phone", "mobile", "email"], "no_marker": False}'/>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </template>
+  </data>
+</odoo>
+

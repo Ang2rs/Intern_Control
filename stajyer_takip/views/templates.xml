@@ -1,0 +1,435 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <template id="website_stajyer_profile_legacy" name="Stajyer Profile (Legacy)">
+      <t t-call="website.layout">
+
+        <div class="container my-4 stajyer-container">
+
+          <!-- Başlık -->
+          <div class="text-center mb-4">
+            <h2 class="stajyer-title">
+              <t t-esc="stajyer and stajyer.name or '-'"/>
+            </h2>
+          </div>
+
+          <!-- Admin ise stajyer seçimi -->
+          <t t-if="is_admin">
+            <div class="mb-4 d-flex justify-content-center">
+              <form action="/stajyer/profile" method="get" class="profile-select-form">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <select name="id" class="form-select stajyer-select" onchange="this.form.submit()">
+                  <t t-foreach="stajyer_list" t-as="s">
+                    <option t-att-value="s.id"
+                      t-att-selected="'selected' if (stajyer and s.id==stajyer.id) else False">
+                      <t t-esc="s.name"/>
+                    </option>
+                  </t>
+                </select>
+              </form>
+            </div>
+          </t>
+          <!-- Kaydı Sil -->
+          <t t-if="is_admin">
+            <form action="/stajyer/profile/delete" method="post" class="text-center mb-4"
+                  onsubmit="return confirm('Bu kaydı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
+              <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+              <input type="hidden" name="stajyer_id" t-att-value="stajyer and stajyer.id or ''"/>
+              <button type="submit" class="btn btn-danger">Kayıdı Sil</button>
+            </form>
+          </t>
+
+          <!-- Profil Bilgi Kartları -->
+          <div class="row g-4 mb-4">
+
+            <!-- Sol Kart -->
+            <div class="col-lg-6">
+              <div class="card profile-card shadow-sm">
+                <div class="card-body">
+
+                  <h5 class="section-title">Genel Bilgiler</h5>
+
+                  <p><strong>Ad Soyad:</strong><br/><t t-esc="stajyer.name or '-'"/></p>
+                  <p><strong>E-posta:</strong><br/><t t-esc="stajyer.email or '-'"/></p>
+                  <p><strong>Telefon:</strong><br/><t t-esc="stajyer.telefon or '-'"/></p>
+                  <p><strong>Departman:</strong><br/><t t-esc="stajyer.department and stajyer.department.name or '-'"/></p>
+                  <p><strong>Yaş:</strong><br/><t t-esc="stajyer.yas or '-'"/></p>
+                  <p><strong>İlerleme (%):</strong><br/>
+  <t t-set="raw" t-value="stajyer.progress if 'progress' in stajyer._fields else None"/>
+  <t t-set="pval" t-value="0"/>
+  <t t-if="raw not in (False, None, '')">
+    <t t-set="tmp" t-value="str(raw).replace('%','').strip()"/>
+    <t t-if="tmp">
+      <t t-set="pv" t-value="0.0"/>
+      <t t-set="pv" t-value="(float(tmp) if ('.' in tmp or tmp.isdigit()) else float(tmp) if tmp else 0.0)"/>
+      <t t-if="pv &gt;= 0 and pv &lt;= 1">
+        <t t-set="pval" t-value="int(pv * 100)"/>
+      </t>
+      <t t-else="">
+        <t t-set="pval" t-value="int(pv)"/>
+      </t>
+    </t>
+  </t>
+
+  <div class="d-flex align-items-center">
+    <div class="progress" style="height:12px; width:220px; margin-right:10px;">
+      <div class="progress-bar" role="progressbar"
+           t-att-style="'width: {}%'.format(pval)"
+           t-att-aria-valuenow="pval"></div>
+    </div>
+    <div><t t-esc="pval"/> %</div>
+  </div>
+</p>
+
+                  <p><strong>Toplam Gün:</strong><br/><t t-esc="stajyer.total_days or 0"/></p>
+
+                </div>
+              </div>
+            </div>
+            <!-- Sağ Kart -->
+            <div class="col-lg-6">
+              <div class="card profile-card shadow-sm">
+                <div class="card-body">
+
+                  <h5 class="section-title">Staj Durumu</h5>
+                  <p><strong>Mentör:</strong><br/><t t-esc="stajyer.mentor_id and stajyer.mentor_id.name or '-'"/></p>
+                  <p><strong>Başlangıç Tarihi:</strong><br/><t t-esc="stajyer.start_date or '-'"/></p>
+                  <p><strong>Bitiş Tarihi:</strong><br/><t t-esc="stajyer.end_date or '-'"/></p>
+                  <p><strong>Durum:</strong><br/>
+                    <t t-esc="dict(stajyer._fields['status'].selection).get(stajyer.status, stajyer.status)"/>
+                  </p>
+                  <p><strong>Aktiflik:</strong><br/>
+                    <t t-if="stajyer.aktif">
+                      <span class="badge bg-success">Aktif</span>
+                    </t>
+                    <t t-else="">
+                      <span class="badge bg-secondary">Pasif</span>
+                    </t>
+                  </p>
+
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Loglar -->
+          <div class="card mb-4 log-card shadow-sm">
+            <div class="card-body">
+              <h5 class="section-title mb-3">Loglar</h5>
+
+              <div class="table-responsive log-table-wrapper">
+                <t t-if="logs and len(logs)">
+                  <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Tarih</th>
+                        <th>Konu / Açıklama</th>
+                        <th>Puan</th>
+                        <th>Stajyer</th>
+                        <th class="text-end"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+
+                      <t t-foreach="logs" t-as="l">
+                        <tr>
+                          <td><t t-esc="l.tarih or l.create_date or ''"/></td>
+
+                          <td>
+                            <strong><t t-esc="l.name or ''"/></strong>
+                            <div class="stajyer-log-aciklama small text-muted mt-1">
+                              <div class="content"><t t-esc="l.aciklama or ''"/></div>
+                              <a class="stajyer-log-more" href="#">Daha Fazla</a>
+                            </div>
+                          </td>
+
+                          <td><t t-esc="l.puan or '-'"/></td>
+                          <td><t t-esc="l.stajyer_id and l.stajyer_id.name or '-'"/></td>
+                          <td class="text-end">
+                            <form action="/stajyer/profile/log/delete" method="post"
+                                  onsubmit="return confirm('Log silinecek. Devam edilsin mi?');"
+                                  class="d-inline-block">
+                              <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                              <input type="hidden" name="log_id" t-att-value="l.id"/>
+                              <input type="hidden" name="stajyer_id" t-att-value="stajyer and stajyer.id or ''"/>
+                              <t t-if="is_admin">
+                              <button type="submit" class="btn btn-link btn-sm text-danger">Sil</button>
+                              </t>
+                            </form>
+                          </td>
+
+                        </tr>
+                      </t>
+
+                    </tbody>
+
+                    <tfoot>
+                      <tr>
+                        <td></td>
+                        <td></td>
+                        <td><strong>Ortalama:</strong> <t t-esc="('%.2f' % puan_average) if puan_average else '-'"/></td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+
+                  </table>
+                </t>
+
+                <t t-else="">
+                  <div class="small text-muted p-2">Henüz log yok.</div>
+                </t>
+
+              </div>
+
+            </div>
+          </div>
+
+
+          <!-- PROFİL DÜZENLE -->
+          <t t-if="is_admin">
+
+            <div class="card shadow-sm mb-5 edit-card">
+              <div class="card-body">
+
+                <h5 class="section-title mb-3">Profili Düzenle</h5>
+
+                <form action="/stajyer/profile/update" method="post">
+                  <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                  <input type="hidden" name="stajyer_id" t-att-value="stajyer.id"/>
+
+                  <div class="row g-4">
+
+                    <div class="col-md-6">
+                      <label class="form-label">Ad Soyad</label>
+                      <input class="form-control" name="name" type="text" t-att-value="stajyer.name or ''"/>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label class="form-label">E-posta</label>
+                      <input class="form-control" name="email" type="email" t-att-value="stajyer.email or ''"/>
+                    </div>
+
+                    <div class="col-md-4">
+                      <label class="form-label">Telefon</label>
+                      <input class="form-control" name="telefon" type="text" t-att-value="stajyer.telefon or ''"/>
+                    </div>
+
+                    <div class="col-md-4">
+                      <label class="form-label">Departman</label>
+                      <input type="hidden" name="department" t-att-value="stajyer and stajyer.department and stajyer.department.id or ''"/>
+                      <input class="form-control" list="departman_list_datalist" name="department_display" id="department_display"
+                             t-att-value="stajyer and (stajyer.department and stajyer.department.name) or ''"
+                             placeholder="Departman seçin veya yeni departman yazın"/>
+                      <datalist id="departman_list_datalist">
+                        <t t-foreach="departman_list" t-as="d">
+                          <option t-att-data-id="d.id" t-att-value="d.name"/>
+                        </t>
+                      </datalist>
+                    </div>
+
+                    <div class="col-md-4">
+                      <label class="form-label">Yaş</label>
+                      <input class="form-control" name="yas" type="number" min="0" t-att-value="stajyer.yas or 0"/>
+                    </div>
+
+                   
+
+                    <div class="col-md-6">
+                      <label class="form-label">Durum</label>
+                      <select name="status" class="form-select">
+                        <option value="">Seçiniz</option>
+                        <t t-foreach="stajyer._fields['status'].selection" t-as="sel">
+                          <option t-att-value="sel[0]"
+                            t-att-selected="'selected' if stajyer.status==sel[0] else False">
+                            <t t-esc="sel[1]"/>
+                          </option>
+                        </t>
+                      </select>
+                    </div>
+
+                    <div class="col-md-10">
+                      <label class="form-label">Mentör</label>
+                      <select name="mentor_id" class="form-select">
+                        <option value="">Mentor seç</option>
+                        <t t-foreach="users" t-as="u">
+                          <option t-att-value="u.id"
+                            t-att-selected="'selected' if stajyer.mentor_id and u.id==stajyer.mentor_id.id else False">
+                            <t t-esc="u.name"/> (<t t-esc="u.login"/>)
+                          </option>
+                        </t>
+                      </select>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-center">
+                      <div class="form-check mt-4 ms-2">
+                        <input class="form-check-input" type="checkbox" name="aktif"
+                               t-att-checked="stajyer.aktif and 'checked' or False"/>
+                        <label class="form-check-label">Aktif</label>
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label class="form-label">Başlangıç Tarihi</label>
+                      <input class="form-control" name="start_date" type="date" t-att-value="stajyer.start_date or ''"/>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label class="form-label">Bitiş Tarihi</label>
+                      <input class="form-control" name="end_date" type="date" t-att-value="stajyer.end_date or ''"/>
+                    </div>
+
+                    <div class="col-12 text-end">
+                      <button type="submit" class="btn btn-warning px-4">Kaydet</button>
+                    </div>
+
+                  </div>
+                </form>
+
+
+                <hr class="my-4"/>
+
+                <!-- LOG EKLEME -->
+                <h6 class="section-title" rows="2">Yeni Log Ekle</h6>
+
+                <form action="/stajyer/profile/log/add" method="post">
+                  <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                  <input type="hidden" name="stajyer_id" t-att-value="stajyer.id"/>
+
+                  <div class="row g-3">
+
+                    <div class="col-md-4">
+                      <label class="form-label">Tarih</label>
+                      <input class="form-control" name="tarih" type="date" t-att-value="today"/>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label class="form-label">Konu</label>
+                      <input class="form-control" name="name" type="text"/>
+                    </div>
+
+                    <div class="col-md-2">
+                      <label class="form-label">Puan</label>
+                      <input class="form-control" name="puan" type="number" min="0" max="100" step="1"/>
+                    </div>
+
+                    <div class="col-12">
+                      <label class="form-label">Açıklama</label>
+                      <textarea class="form-control" name="aciklama" rows="4"
+                        placeholder="Log metni..." required="required"></textarea>
+                    </div>
+
+                    <div class="text-end">
+                      <button type="submit" class="btn btn-primary">Log Ekle</button>
+                    </div>
+
+                  </div>
+                </form>
+
+              </div>
+            </div>
+
+          </t>
+
+          <!-- STYLE -->
+          <style><![CDATA[
+
+            .stajyer-title {
+              font-size: 2.2rem; 
+              font-weight: 700; 
+              color: #333;
+            }
+            .section-title {
+              font-size: 1.15rem;
+              font-weight: 600;
+              color: #444;
+              margin-bottom: 10px;
+            }
+            .profile-card, .edit-card, .log-card {
+              border-radius: 14px;
+              border: none;
+              background: #fff;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            }
+            .form-control, .form-select {
+              border-radius: 10px;
+              height: 46px;
+            }
+            .log-table-wrapper {
+              max-height: 400px;
+              overflow: auto;
+              border-radius: 10px;
+            }
+            .stajyer-log-aciklama > .content {
+              max-height: 3.6rem;
+              overflow: hidden;
+              display: block;
+            }
+            .stajyer-log-aciklama.expanded > .content {
+              max-height: none;
+            }
+            .stajyer-log-more {
+              cursor: pointer;
+              color: #0d6efd;
+              font-size: 0.8rem;
+              text-decoration: underline;
+            }
+
+
+          ]]></style>
+
+
+          <!-- JS -->
+          <script><![CDATA[
+            document.addEventListener('DOMContentLoaded', function(){
+              document.querySelectorAll('.stajyer-log-aciklama').forEach(function(container){
+                var content = container.querySelector('.content');
+                var link = container.querySelector('.stajyer-log-more');
+                if(!link) return;
+
+                if(content.scrollHeight <= content.clientHeight + 2){
+                  link.style.display = 'none';
+                }
+                else{
+                  link.addEventListener('click', function(e){
+                    e.preventDefault();
+                    container.classList.toggle('expanded');
+                    link.textContent =
+                      container.classList.contains('expanded') ? 'Küçült' : 'Daha Fazla';
+                  });
+                }
+              });
+            });
+          ]]></script>
+
+          <script>
+document.addEventListener('DOMContentLoaded', function () {
+  var display = document.getElementById('department_display');
+  var hidden = document.querySelector('input[name="department"]');
+  if (!display || !hidden) { return; }
+  display.addEventListener('input', function (ev) {
+    var val = ev.target.value;
+    var opts = document.querySelectorAll('#departman_list_datalist option');
+    var found = false;
+    opts.forEach(function(o){
+      if (o.value === val) {
+        hidden.value = o.getAttribute('data-id') || '';
+        found = true;
+      }
+    });
+    if (!found) {
+      hidden.value = '';
+    }
+  });
+});
+</script>
+
+        </div>
+
+      </t>
+    </template>
+
+  </data>
+</odoo>

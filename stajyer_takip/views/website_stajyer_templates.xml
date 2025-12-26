@@ -1,0 +1,649 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+  <!-- 🟢 Kayıt Sayfası -->
+  <template id="website_stajyer_signup" name="Stajyer Signup">
+    <t t-call="website.layout">
+      <div class="container">
+        <div class="row justify-content-center" style="margin-top:6rem;">
+          <div class="col-11 col-sm-8 col-md-6 col-lg-4">
+            <div class="card o_portal_signin_card">
+              <div class="card-body text-center">
+                <h3 class="mb-4">Stajyer Kayıt</h3>
+                <t t-if="error">
+                  <div class="alert alert-danger" t-esc="error"/>
+                </t>
+                <form action="/stajyer/signup" method="post" class="o_login_form">
+                  <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                  <div class="mb-3 text-start">
+                    <label class="form-label">Ad Soyad</label>
+                    <input class="form-control" type="text" name="name" required="required" placeholder="Ad Soyad"/>
+                  </div>
+                  <div class="mb-3 text-start">
+                    <label class="form-label">E-posta</label>
+                    <input class="form-control" type="email" name="email" required="required" placeholder="E-posta"/>
+                  </div>
+                  <div class="mb-3 text-start">
+                    <label class="form-label">Parola</label>
+                    <input class="form-control" type="password" name="password" required="required" placeholder="Parola"/>
+                  </div>
+                  <div class="mb-3 text-start">
+                    <label class="form-label">Yaş</label>
+                    <input class="form-control" type="number" name="yas" min="0" required="required" placeholder="Yaş"/>
+                  </div>
+                  <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-block">Kayıt Ol</button>
+                  </div>
+                </form>
+                <div class="mt-3">
+                  Zaten hesabın var mı? <a href="/web/login">Giriş Yap</a>
+                </div>
+              </div>
+            </div>
+            <div class="text-center mt-2 text-muted small">
+              Kayıt sonrası portal giriş bilgileri ile giriş yapabilirsiniz.
+            </div>
+            <div class="mb-5" style="height:4rem;"></div>
+          </div>
+        </div>
+      </div>
+    </t>
+  </template>
+
+
+  <!-- Profil Sayfası -->
+  <template id="website_stajyer_profile" name="Stajyer Profile">
+    <t t-call="website.layout">
+      <div class="container py-5">
+        
+        <!-- Yönetici Araçları -->
+        <t t-if="is_admin">
+            <div class="row justify-content-center mb-4">
+                <div class="col-12 col-lg-10">
+                    <div class="card bg-white border-0 shadow-sm rounded-4 overflow-hidden" 
+                         style="background: linear-gradient(to right, #ffffff, #f8fafc);">
+                        <div class="card-body p-3">
+                            <div class="row align-items-center g-3">
+                                <!-- Başlık -->
+                                <div class="col-md-3 d-flex align-items-center justify-content-center justify-content-md-start">
+                                    <div class="bg-warning text-white rounded-circle p-2 me-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 36px; height: 36px;">
+                                        <i class="fa fa-cogs" style="font-size: 0.9rem;"></i>
+                                    </div>
+                                    <h6 class="mb-0 text-dark fw-bold text-uppercase small" style="font-size: 0.75rem; letter-spacing: 0.5px;">Yönetici Paneli</h6>
+                                </div>
+                                
+                                <!-- Arama Menüsü -->
+                                <div class="col-md-6 d-flex justify-content-center">
+                                     <form action="/stajyer/profile" method="get" class="w-100 d-flex justify-content-center">
+                                        <select name="id" class="form-select form-select-sm border-0 bg-light fw-bold text-dark shadow-inset py-1 ps-3 w-100 w-md-75" 
+                                                onchange="this.form.submit()" 
+                                                style="border-radius: 6px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.03); font-size: 0.85rem;">
+                                            <t t-foreach="stajyer_list" t-as="s">
+                                                <option t-att-value="s.id" t-att-selected="'selected' if (stajyer and s.id==stajyer.id) else False">
+                                                    <t t-esc="s.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </form>
+                                </div>
+                                
+                                <!-- Silme Butonu -->
+                                <div class="col-md-3 text-center text-md-end">
+                                    <!-- Silme Butonu Kutusu -->
+                                    <t t-if="stajyer">
+                                        <button type="button" class="btn btn-danger btn-sm text-white fw-bold px-4 py-2 rounded-3 shadow-sm border-0"
+                                                onclick="showDeleteModal()">
+                                            <i class="fa fa-trash me-2"></i>Kaydı Sil
+                                        </button>
+                                        
+                                        <!-- Silme İşlemi İçin Gizli Form -->
+                                        <form id="deleteForm" action="/stajyer/profile/delete" method="post" class="d-none">
+                                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                            <input type="hidden" name="stajyer_id" t-att-value="stajyer.id"/>
+                                        </form>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+
+
+        <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050">
+            <div id="actionToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body d-flex align-items-center">
+                        <i class="fa fa-exclamation-circle fa-lg me-2"></i>
+                        <span id="actionToastMsg">Mesaj</span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg mb-5">
+              <div class="modal-header border-0 bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="deleteModalLabel"><i class="fa fa-exclamation-triangle me-2"></i>Kayıt Silinecek</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body p-4 text-center">
+                <p class="mb-0 fs-5">Bu stajyer kaydını ve ilgili tüm verilerini silmek istediğinize emin misiniz?</p>
+                <p class="text-danger small fw-bold mt-2 text-uppercase">Bu işlem geri alınamaz!</p>
+              </div>
+              <div class="modal-footer border-0 bg-light justify-content-center p-3">
+                <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-danger px-4 fw-bold shadow-sm" onclick="document.getElementById('deleteForm').submit();">
+                    <i class="fa fa-trash me-2"></i>Evet, Sil
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <script>
+            function showErrorToast(msg) {
+                var toastEl = document.getElementById('actionToast');
+                var msgEl = document.getElementById('actionToastMsg');
+                if (toastEl &amp;&amp; msgEl) {
+                    msgEl.textContent = msg;
+                    if (typeof bootstrap !== 'undefined') {
+                        var toast = new bootstrap.Toast(toastEl);
+                        toast.show();
+                    } else if (typeof $ !== 'undefined' &amp;&amp; $.fn.toast) {
+                        $(toastEl).toast('show');
+                    } else {
+                        alert(msg);
+                    }
+                } else {
+                    alert(msg);
+                }
+            }
+
+            function showDeleteModal() {
+                var modalEl = document.getElementById('deleteConfirmModal');
+                if (typeof bootstrap !== 'undefined') {
+                    var m = new bootstrap.Modal(modalEl);
+                    m.show();
+                } else if (typeof $ !== 'undefined' &amp;&amp; $.fn.modal) {
+                    $(modalEl).modal('show');
+                } else {
+                    if (confirm("Bu stajyer kaydını silmek istediğinize emin misiniz?")) {
+                         document.getElementById('deleteForm').submit();
+                    }
+                }
+            }
+        </script>
+
+
+        <!-- Header Section -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-12 col-lg-10">
+                <div class="card border-0 shadow-lg overflow-hidden">
+                    <div class="card-body p-0">
+                        <div class="row g-0">
+                            <!-- Sol: Avatar & Temel Bilgiler -->
+                            <div class="col-md-4 p-4 p-md-5 text-center d-flex flex-column align-items-center justify-content-center text-white" 
+                                 style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);">
+                                <div class="mb-4">
+                                    <div class="avatar-placeholder rounded-circle bg-white text-primary d-flex align-items-center justify-content-center shadow-sm" 
+                                         style="width: 110px; height: 110px; font-size: 3rem; font-weight: 800;">
+                                        <t t-esc="stajyer.name[:1].upper() if stajyer.name else '?'"/>
+                                    </div>
+                                </div>
+                                <h3 class="fw-bold mb-1"><t t-esc="stajyer.name"/></h3>
+                                <p class="opacity-75 mb-3"><t t-esc="stajyer.email"/></p>
+                                
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <span t-attf-class="badge rounded-pill px-3 py-2 #{'bg-success' if stajyer.active else 'bg-secondary'} border border-white border-opacity-25">
+                                        <t t-esc="'Aktif' if stajyer.active else 'Pasif'"/>
+                                    </span>
+                                     <span class="badge rounded-pill px-3 py-2 bg-warning text-dark border border-white border-opacity-25">
+                                        <t t-esc="dict(stajyer._fields['status'].selection).get(stajyer.status, stajyer.status)"/>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Sağ: İstatistikler & Ana Detaylar -->
+                            <div class="col-md-8 p-4 p-md-5 d-flex flex-column justify-content-center bg-white">
+                                <div class="row g-4 text-center mb-5 align-items-center">
+                                    <div class="col-12 col-md-4 mb-4 mb-md-0">
+                                        <h2 class="fw-bold text-dark mb-0">
+                                            <t t-if="stajyer.duration_days and stajyer.duration_days > 1000">∞</t>
+                                            <t t-else=""><t t-esc="stajyer.duration_days or 0"/></t>
+                                        </h2>
+                                        <small class="text-muted fw-bold text-uppercase tracking-wider" style="letter-spacing: 1px; font-size: 0.75rem;">Gün</small>
+                                    </div>
+                                    <div class="col-12 col-md-4 mb-4 mb-md-0 border-0 border-md-start border-md-end px-0 px-md-4">
+                                         <!-- İlerleme Çubuğu Bölümü -->
+                                        <div class="d-flex align-items-end justify-content-center mb-1">
+                                            <h2 class="fw-bold text-primary mb-0">
+                                                <t t-if="stajyer.progress > 1000">∞</t>
+                                                <t t-else=""><t t-esc="('%.0f' % stajyer.progress) if stajyer.progress else '0'"/></t>
+                                            </h2>
+                                            <span class="fs-6 text-primary mb-1 fw-bold ms-1">%</span>
+                                        </div>
+                                        <div class="progress" style="height: 6px; border-radius: 10px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" 
+                                                 t-att-style="'width: ' + ('100' if stajyer.progress > 1000 else (('%.0f' % stajyer.progress) if stajyer.progress else '0')) + '%'" 
+                                                 aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <small class="text-muted fw-bold text-uppercase d-block mt-2" style="letter-spacing: 1px; font-size: 0.75rem;">İlerleme</small>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <h2 class="fw-bold text-warning mb-0">
+                                            <t t-if="puan_average > 1000">∞</t>
+                                            <t t-else=""><t t-esc="('%.1f' % puan_average) if puan_average else '-'"/></t>
+                                        </h2>
+                                        <small class="text-muted fw-bold text-uppercase tracking-wider" style="letter-spacing: 1px; font-size: 0.75rem;">Ort. Puan</small>
+                                    </div>
+                                </div>
+                                <div class="row g-4">
+                                    <div class="col-sm-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-square bg-light text-primary rounded-3 p-2 me-3">
+                                                <i class="fa fa-building-o fa-lg"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block" style="font-size: 0.8rem;">Departman</small>
+                                                <span class="fw-bold text-dark"><t t-esc="stajyer.department.name if stajyer.department else '-'"/></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-square bg-light text-primary rounded-3 p-2 me-3">
+                                                <i class="fa fa-user-o fa-lg"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block" style="font-size: 0.8rem;">Mentör</small>
+                                                <span class="fw-bold text-dark"><t t-esc="stajyer.mentor_id.name if stajyer.mentor_id else '-'"/></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-square bg-light text-primary rounded-3 p-2 me-3">
+                                                <i class="fa fa-calendar fa-lg"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block" style="font-size: 0.8rem;">Başlangıç</small>
+                                                <span class="fw-bold text-dark"><t t-esc="stajyer.start_date or '-'"/></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-square bg-light text-primary rounded-3 p-2 me-3">
+                                                <i class="fa fa-flag-checkered fa-lg"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block" style="font-size: 0.8rem;">Bitiş</small>
+                                                <span class="fw-bold text-dark"><t t-esc="stajyer.end_date or '-'"/></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <!-- Sol Sütun: Bağlantılar & İşlemler -->
+            <div class="col-lg-4 mb-4">
+                <div class="d-grid gap-3 mb-4">
+                    <a href="/stajyer/daily" class="btn btn-primary shadow-sm py-3 text-start">
+                        <div class="d-flex align-items-center">
+                            <i class="fa fa-pencil-square-o fa-2x me-3"></i>
+                            <div>
+                                <div class="fw-bold">Günlük Çalışma Kaydı</div>
+                                <small class="opacity-75">Bugünkü çalışmalarını gir</small>
+                            </div>
+                        </div>
+                    </a>
+                    <a href="/stajyer/meeting/book" class="btn btn-white border shadow-sm py-3 text-start text-dark">
+                        <div class="d-flex align-items-center">
+                            <i class="fa fa-handshake-o fa-2x me-3 text-info"></i>
+                            <div>
+                                <div class="fw-bold">Görüşme Talep Et</div>
+                                <small class="text-muted">Mentörünle görüşme ayarla</small>
+                            </div>
+                        </div>
+                    </a>
+                     <a href="/stajyer/meeting/my" class="btn btn-white border shadow-sm py-3 text-start text-dark">
+                        <div class="d-flex align-items-center">
+                            <i class="fa fa-list-alt fa-2x me-3 text-warning"></i>
+                            <div>
+                                <div class="fw-bold">Görüşmelerim</div>
+                            </div>
+                        </div>
+                    </a>
+                     <a href="/stajyer/roadmap" class="btn btn-white border shadow-sm py-3 text-start text-dark">
+                        <div class="d-flex align-items-center">
+                            <i class="fa fa-map-signs fa-2x me-3 text-success"></i>
+                            <div>
+                                <div class="fw-bold">Yol Haritası</div>
+                                <small class="text-muted">Seçili yetenekler için</small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">Hızlı Bilgiler</h5>
+                        <ul class="list-unstyled mb-0">
+                             <li class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Telefon</span>
+                                <span class="fw-medium"><t t-esc="stajyer.phone or '-'"/></span>
+                            </li>
+                            <li class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Yaş</span>
+                                <span class="fw-medium"><t t-esc="stajyer.yas or '-'"/></span>
+                            </li>
+
+                                    <li class="d-flex justify-content-between">
+                                                <span class="text-muted">Oluşturuldu</span>
+                                                <span class="fw-medium"><t t-esc="stajyer.create_date.strftime('%d.%m.%Y') if stajyer.create_date else '-'"/></span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <!-- Yetenekler Bölümü -->
+                                <div class="card shadow-sm mb-4">
+                                    <div class="card-body">
+                                        <h5 class="fw-bold mb-3"><i class="fa fa-code me-2 text-primary"></i>Yetenekler</h5>
+                                        <t t-if="stajyer.skill_ids">
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <t t-foreach="stajyer.skill_ids" t-as="skill">
+                                                    <t t-set="badge_classes" t-value="['bg-primary', 'bg-success', 'bg-warning', 'bg-danger', 'bg-info', 'bg-secondary']"/>
+                                                    <t t-set="badge_class" t-value="badge_classes[skill_index % 6]"/>
+                                                    <span t-attf-class="badge rounded-pill px-3 py-2 text-white #{badge_class}">
+                                                        <t t-esc="skill.name"/>
+                                                    </span>
+                                                </t>
+                                            </div>
+                                        </t>
+                                        <t t-else="">
+                                            <p class="text-muted mb-0 small">Henüz yetenek eklenmemiş.</p>
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+
+            <!-- Sağ Sütun: Zaman Çizelgesi & Günlükler -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 p-4 border-bottom">
+                         <h5 class="fw-bold mb-0">Değerlendirme Logları</h5>
+                         <t t-if="is_admin">
+                            <button class="btn btn-sm btn-outline-primary w-100 w-sm-auto" type="button" data-bs-toggle="collapse" data-bs-target="#newLogCollapse">
+                                <i class="fa fa-plus me-1"></i> Yeni Log Ekle
+                            </button>
+                         </t>
+                    </div>
+                    
+                    <!-- Yönetici: Yeni Log Formu (Açılır) -->
+                    <t t-if="is_admin">
+                        <div class="collapse p-4 bg-light border-bottom" id="newLogCollapse">
+                             <form action="/stajyer/profile/log/add" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="stajyer_id" t-att-value="stajyer.id"/>
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <input class="form-control" name="name" type="text" placeholder="Konu başlığı..." required="required"/>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input class="form-control" name="puan" type="number" min="0" max="100" placeholder="Puan (0-100)"/>
+                                    </div>
+                                     <div class="col-12">
+                                        <input class="form-control" name="tarih" type="date" t-att-value="today"/>
+                                    </div>
+                                    <div class="col-12">
+                                        <textarea class="form-control" name="aciklama" rows="3" placeholder="Detaylı açıklama..." required="required"></textarea>
+                                    </div>
+                                    <div class="col-12 text-end">
+                                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </t>
+
+                    <div class="card-body p-4">
+                        <div class="log-timeline">
+                            <t t-if="logs">
+                                <t t-foreach="logs" t-as="l">
+                                    <div class="log-item">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                                            <div>
+                                                <h6 class="fw-bold mb-0 text-dark text-break"><t t-esc="l.name"/></h6>
+                                                <small class="text-muted"><i class="fa fa-clock-o me-1"></i><t t-esc="l.tarih"/></small>
+                                            </div>
+                                            <t t-if="l.puan">
+                                                <span class="badge bg-success-soft text-success rounded-pill px-3 flex-shrink-0">
+                                                    <t t-esc="l.puan"/> Puan
+                                                </span>
+                                            </t>
+                                        </div>
+                                        <p class="text-muted mb-2"><t t-esc="l.aciklama"/></p>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                             <small class="text-muted fst-italic">
+                                                <i class="fa fa-user-circle-o me-1"></i>
+                                                <t t-esc="l.user_id.name if l.user_id else 'Sistem'"/>
+                                            </small>
+                                            <t t-if="is_admin">
+                                                 <form action="/stajyer/profile/log/delete" method="post" onsubmit="return confirm('Bu kaydı silmek istediğinize emin misiniz?');">
+                                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                    <input type="hidden" name="log_id" t-att-value="l.id"/>
+                                                    <input type="hidden" name="stajyer_id" t-att-value="stajyer.id"/>
+                                                    <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Sil">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </t>
+                            </t>
+                            <t t-else="">
+                                <div class="text-center text-muted py-5">
+                                    <i class="fa fa-comment-o fa-3x mb-3 opacity-25"></i>
+                                    <p>Henüz değerlendirme kaydı bulunmuyor.</p>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sahip: Kendi Profilini Düzenle (Temel Bilgiler) -->
+                <t t-if="not is_admin and stajyer and stajyer.user_id and stajyer.user_id.id == current_uid">
+                    <div class="card shadow-sm border-primary border-top-0 border-end-0 border-bottom-0 border-3 mb-4">
+                        <div class="card-header bg-white p-4">
+                             <h5 class="fw-bold mb-0 text-primary"><i class="fa fa-edit me-2"></i>Profilimi Düzenle</h5>
+                        </div>
+                        <div class="card-body p-4">
+                             <form action="/stajyer/profile/self-update" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="stajyer_id" t-att-value="stajyer.id"/>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Ad Soyad</label>
+                                        <input class="form-control" name="name" type="text" t-att-value="stajyer.name" required="required"/>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">E-posta</label>
+                                        <input class="form-control" name="email" type="email" t-att-value="stajyer.email" required="required"/>
+                                    </div>
+                                    <div class="col-md-6">
+                                         <label class="form-label small text-muted">Telefon</label>
+                                        <input class="form-control" name="phone" type="tel" t-att-value="stajyer.phone"/>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Yaş</label>
+                                        <input class="form-control" name="yas" type="number" min="13" t-att-value="stajyer.yas"/>
+                                    </div>
+
+                                    <!-- Sahip için Yetenek Seçimi -->
+                                    <div class="col-12">
+                                        <label class="form-label small text-muted">Yetenekler</label>
+                                        <div class="d-flex flex-wrap gap-2 p-3 border rounded bg-light">
+                                            <t t-foreach="all_skills" t-as="skill">
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" 
+                                                           name="skill_ids" 
+                                                           t-att-value="skill.id"
+                                                           t-att-id="'owner_skill_' + str(skill.id)"
+                                                           t-att-checked="skill.id in stajyer.skill_ids.ids"/>
+                                                    <label class="form-check-label" t-att-for="'owner_skill_' + str(skill.id)">
+                                                        <t t-esc="skill.name"/>
+                                                    </label>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 text-end">
+                                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                                    </div>
+                                </div>
+                             </form>
+                        </div>
+                    </div>
+                </t>
+
+                <!-- Yönetici: Profili Düzenle -->
+                 <t t-if="is_admin">
+                    <div class="card shadow-sm border-danger border-top-0 border-end-0 border-bottom-0 border-3">
+                        <div class="card-header bg-white p-4">
+                             <h5 class="fw-bold mb-0 text-danger">Profili Düzenle</h5>
+                        </div>
+                        <div class="card-body p-4">
+                             <form action="/stajyer/profile/update" method="post">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <input type="hidden" name="stajyer_id" t-att-value="stajyer.id"/>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Ad Soyad</label>
+                                        <input class="form-control" name="name" type="text" t-att-value="stajyer.name"/>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">E-posta</label>
+                                        <input class="form-control" name="email" type="email" t-att-value="stajyer.email"/>
+                                    </div>
+                                    <div class="col-md-6">
+                                         <label class="form-label small text-muted">Telefon</label>
+                                        <input class="form-control" name="phone" type="tel" t-att-value="stajyer.phone"/>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Yaş</label>
+                                        <input class="form-control" name="yas" type="number" min="0" t-att-value="stajyer.yas"/>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Departman</label>
+                                        <input type="hidden" name="department" t-att-value="stajyer and stajyer.department and stajyer.department.id or ''"/>
+                                        <input class="form-control" list="departman_list_datalist" name="department_display" id="department_display"
+                                               t-att-value="stajyer and (stajyer.department and stajyer.department.name) or ''"
+                                               placeholder="Seçiniz veya yazınız"/>
+                                         <datalist id="departman_list_datalist">
+                                            <t t-foreach="departman_list" t-as="d">
+                                              <option t-att-data-id="d.id" t-att-value="d.name"/>
+                                            </t>
+                                          </datalist>
+                                    </div>
+                                    
+                                     <div class="col-md-6">
+                                        <label class="form-label small text-muted">Mentör</label>
+                                        <select name="mentor_id" class="form-select">
+                                            <option value="">Seçiniz</option>
+                                            <t t-foreach="users" t-as="u">
+                                                <option t-att-value="u.id" t-att-selected="'selected' if stajyer.mentor_id and u.id==stajyer.mentor_id.id else False">
+                                                    <t t-esc="u.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+
+
+                                    <div class="col-md-4">
+                                        <label class="form-label small text-muted">Durum</label>
+                                        <select name="status" class="form-select">
+                                            <option value="">Seçiniz</option>
+                                            <t t-foreach="stajyer._fields['status'].selection" t-as="sel">
+                                              <option t-att-value="sel[0]"
+                                                t-att-selected="'selected' if stajyer.status==sel[0] else False">
+                                                <t t-esc="sel[1]"/>
+                                              </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                     <div class="col-md-4 d-flex align-items-center">
+                                         <div class="form-check pt-4">
+                                            <input class="form-check-input" type="checkbox" name="active" id="activeCheck" 
+                                                   t-att-checked="stajyer.active and 'checked' or False"/>
+                                            <label class="form-check-label" for="activeCheck">Aktif Kayıt</label>
+                                         </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Başlangıç Tarihi</label>
+                                        <input class="form-control" name="start_date" type="date" t-att-value="stajyer.start_date"/>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small text-muted">Bitiş Tarihi</label>
+                                        <input class="form-control" name="end_date" type="date" t-att-value="stajyer.end_date"/>
+                                    </div>
+
+                                    <!-- Yetenek Seçimi -->
+                                    <div class="col-12">
+                                        <label class="form-label small text-muted">Yetenekler</label>
+                                        <div class="d-flex flex-wrap gap-2 p-3 border rounded bg-light">
+                                            <t t-foreach="all_skills" t-as="skill">
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" 
+                                                           name="skill_ids" 
+                                                           t-att-value="skill.id"
+                                                           t-att-id="'skill_' + str(skill.id)"
+                                                           t-att-checked="skill.id in stajyer.skill_ids.ids"/>
+                                                    <label class="form-check-label" t-att-for="'skill_' + str(skill.id)">
+                                                        <t t-esc="skill.name"/>
+                                                    </label>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 text-end">
+                                        <button type="submit" class="btn btn-dark">Değişiklikleri Kaydet</button>
+                                    </div>
+                                </div>
+                             </form>
+                        </div>
+                    </div>
+                 </t>
+            </div>
+        </div>
+      </div>
+    </t>
+  </template>
+
+
+  <template id="no_stajyer_found" name="No Stajyer Found">
+    <t t-call="website.layout">
+      <div class="container mt-5 mb-5 text-center">
+        <h2>Stajyer Bulunamadı</h2>
+        <p class="text-muted">Henüz bir stajyer kaydınız bulunmuyor.</p>
+        <a href="/stajyer/signup" class="btn btn-primary mt-3">Kayıt Ol</a>
+      </div>
+    </t>
+  </template>
+
+</odoo>

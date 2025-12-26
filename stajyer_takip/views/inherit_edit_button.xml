@@ -1,0 +1,9 @@
+<odoo>
+  <template id="inherit_profile_edit_button" inherit_id="module.template_id">
+    <xpath expr="//a[contains(@class,'profile-edit') or contains(.,'Profili Düzenle')]" position="replace">
+      <t t-if="is_admin or current_uid == display_user.id">
+        <a class="profile-edit btn btn-secondary" href="/stajyer_takip/profile/edit/<t t-esc='display_user.id'/>">Profili Düzenle</a>
+      </t>
+    </xpath>
+  </template>
+</odoo>

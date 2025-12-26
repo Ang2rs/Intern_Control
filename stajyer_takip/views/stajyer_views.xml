@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+  <!-- Liste (List View) -->
+  <record id="view_stajyer_list" model="ir.ui.view">
+    <field name="name">stajyer.takip.list</field>
+    <field name="model">stajyer.takip</field>
+    <field name="arch" type="xml">
+      <list string="Stajyerler">
+        <field name="name"/>
+        <field name="mentor_id"/>
+        <field name="department"/>
+        <field name="start_date"/>
+        <field name="status"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Form View -->
+  <record id="view_stajyer_form" model="ir.ui.view">
+    <field name="name">stajyer.takip.form</field>
+    <field name="model">stajyer.takip</field>
+    <field name="arch" type="xml">
+      <form string="Stajyer">
+        <sheet>
+          <div class="oe_button_box" name="button_box">
+             <button name="action_open_logs"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-list">
+                    <field name="log_count" widget="statinfo" string="Loglar"/>
+             </button>
+             <button name="action_open_meetings"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-calendar">
+                    <field name="meeting_count" widget="statinfo" string="Görüşmeler"/>
+             </button>
+             <button name="action_open_daily_works"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-clock-o">
+                    <field name="daily_work_count" widget="statinfo" string="Çalışmalar"/>
+             </button>
+             <button name="action_open_quizzes"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-check-square-o">
+                    <field name="quiz_count" widget="statinfo" string="Quizler"/>
+             </button>
+          </div>
+          <group>
+            <group>
+              <field name="name"/>
+              <field name="email"/>
+              <field name="phone"/>
+              <field name="department"/>
+              <field name="yas"/>
+            </group>
+            <group>
+              <field name="mentor_id"/>
+
+              <field name="start_date"/>
+              <field name="end_date"/>
+              <field name="status"/>
+              <field name="active"/>
+            </group>
+          </group>
+          <group>
+            <field name="progress" widget="progressbar"/>
+            <field name="duration_days" readonly="1"/>
+          </group>
+          <notebook>
+            <page string="Yetenekler">
+              <field name="skill_ids" widget="many2many_tags"/>
+            </page>
+            <page string="Notlar">
+              <field name="notes"/>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- Action -->
+  <record id="action_stajyer" model="ir.actions.act_window">
+    <field name="name">Stajyerler</field>
+    <field name="res_model">stajyer.takip</field>
+    <field name="view_mode">list,form</field> 
+    <field name="view_id" ref="view_stajyer_list"/> 
+    <field name="help" type="html">
+        <p>Stajyer kayıtlarını buradan yönetin.</p>
+    </field>
+</record>
+
+  <!-- Menü -->
+  <menuitem id="menu_stajyer_root" name="Stajyer Takip" sequence="10"/>
+  <menuitem id="menu_stajyer_items"
+            name="Stajyerler"
+            parent="menu_stajyer_root"
+            action="action_stajyer"
+            sequence="10"/>
+
+  <!-- Search View -->
+  <record id="view_stajyer_search" model="ir.ui.view">
+    <field name="name">stajyer.takip.search</field>
+    <field name="model">stajyer.takip</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="name"/>
+        <filter string="Ortalama > 80"
+                name="filter_ortalama_80"
+                domain="[('ortalama_puan','>',80)]"/>
+      </search>
+    </field>
+  </record>
+
+</odoo>

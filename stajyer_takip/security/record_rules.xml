@@ -1,0 +1,33 @@
+<odoo>
+    <!-- User -->
+    <record id="rule_stajyer_user_own" model="ir.rule">
+        <field name="name">User kendi kayıtlarını görsün</field>
+        <field name="model_id" ref="model_stajyer_takip"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- Manager -->
+    <record id="rule_stajyer_manager_all" model="ir.rule">
+        <field name="name">Manager tüm kayıtlarını görsün</field>
+        <field name="model_id" ref="model_stajyer_takip"/>
+        <field name="domain_force">[]</field>
+        <field name="groups" eval="[(4, ref('base.group_system'))]"/>
+    </record>
+
+    <!-- Portal -->
+    <record id="rule_stajyer_portal" model="ir.rule">
+        <field name="name">Stajyer portal kendi kaydı</field>
+        <field name="model_id" ref="model_stajyer_takip"/>
+        <field name="domain_force">[('user_id','=',user.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+    </record>
+
+    <!-- Portal Log -->
+    <record id="rule_stajyer_log_portal" model="ir.rule">
+        <field name="name">Stajyer log portal kendi kaydı</field>
+        <field name="model_id" ref="model_stajyer_log"/>
+        <field name="domain_force">[('stajyer_id.user_id','=',user.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+    </record>
+</odoo>

@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+  <!-- ========== STAJYER SKILL (Yetenekler) ========== -->
+  
+  <!-- Skill List View -->
+  <record id="view_stajyer_skill_list" model="ir.ui.view">
+    <field name="name">stajyer.skill.list</field>
+    <field name="model">stajyer.skill</field>
+    <field name="arch" type="xml">
+      <list string="Yetenekler" editable="bottom">
+        <field name="name"/>
+        <field name="color" widget="color_picker"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Skill Form View -->
+  <record id="view_stajyer_skill_form" model="ir.ui.view">
+    <field name="name">stajyer.skill.form</field>
+    <field name="model">stajyer.skill</field>
+    <field name="arch" type="xml">
+      <form string="Yetenek">
+        <sheet>
+          <group>
+            <field name="name"/>
+            <field name="color" widget="color_picker"/>
+          <notebook>
+            <page string="Yol Haritası (Roadmap)">
+              <field name="roadmap_ids">
+                <list>
+                  <field name="sequence" widget="handle"/>
+                  <field name="day"/>
+                  <field name="name"/>
+                  <field name="description"/>
+                  <field name="url" widget="url"/>
+                </list>
+              </field>
+            </page>
+          </notebook>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- Skill Action -->
+  <record id="action_stajyer_skill" model="ir.actions.act_window">
+    <field name="name">Yetenekler</field>
+    <field name="res_model">stajyer.skill</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">İlk yeteneği ekleyin!</p>
+      <p>Stajyerlerin bildiği teknolojileri ve yetenekleri burada yönetin.</p>
+    </field>
+  </record>
+
+
+
+  <!-- ========== STAJYER ROADMAP ITEM (Yol Haritası Öğeleri) ========== -->
+
+  <!-- Roadmap Item List View -->
+  <record id="view_stajyer_roadmap_item_list" model="ir.ui.view">
+    <field name="name">stajyer.roadmap.item.list</field>
+    <field name="model">stajyer.roadmap.item</field>
+    <field name="arch" type="xml">
+      <list string="Yol Haritası">
+        <field name="skill_id"/>
+        <field name="sequence" widget="handle"/>
+        <field name="day"/>
+        <field name="name"/>
+        <field name="description"/>
+        <field name="url" widget="url"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Roadmap Item Form View -->
+  <record id="view_stajyer_roadmap_item_form" model="ir.ui.view">
+    <field name="name">stajyer.roadmap.item.form</field>
+    <field name="model">stajyer.roadmap.item</field>
+    <field name="arch" type="xml">
+      <form string="Yol Haritası Öğesi">
+        <sheet>
+          <group>
+            <group>
+              <field name="skill_id"/>
+              <field name="day"/>
+            </group>
+            <group>
+              <field name="name"/>
+              <field name="url" widget="url"/>
+            </group>
+          </group>
+          <notebook>
+            <page string="İçerik">
+              <field name="description"/>
+            </page>
+            <page string="Kontrol Listesi">
+              <field name="checklist_ids">
+                <list editable="bottom">
+                  <field name="sequence" widget="handle"/>
+                  <field name="name"/>
+                </list>
+              </field>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+    <!-- Roadmap Item Search View -->
+  <record id="view_stajyer_roadmap_item_search" model="ir.ui.view">
+    <field name="name">stajyer.roadmap.item.search</field>
+    <field name="model">stajyer.roadmap.item</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="skill_id"/>
+        <field name="name"/>
+        <group expand="0" string="Grupla">
+          <filter string="Yetenek" name="group_skill" context="{'group_by':'skill_id'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <!-- Roadmap Item Action -->
+  <record id="action_stajyer_roadmap_item" model="ir.actions.act_window">
+    <field name="name">Yol Haritası</field>
+    <field name="res_model">stajyer.roadmap.item</field>
+    <field name="view_mode">list,form</field>
+    <field name="context">{'search_default_group_skill': 1}</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">İlk yol haritası öğesini ekleyin!</p>
+    </field>
+  </record>
+
+
+  <!-- ========== STAJYER MEETING (Görüşmeler) ========== -->
+  
+  <!-- Meeting List View -->
+  <record id="view_stajyer_meeting_list" model="ir.ui.view">
+    <field name="name">stajyer.meeting.list</field>
+    <field name="model">stajyer.meeting</field>
+    <field name="arch" type="xml">
+      <list string="Görüşmeler" decoration-success="state=='accepted'" decoration-danger="state=='rejected'" decoration-muted="state=='expired'">
+        <field name="name"/>
+        <field name="user_id"/>
+        <field name="date"/>
+        <field name="time" widget="float_time"/>
+        <field name="state" widget="badge" decoration-success="state=='accepted'" decoration-danger="state=='rejected'" decoration-warning="state=='pending'" decoration-muted="state=='expired'"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Meeting Form View -->
+  <record id="view_stajyer_meeting_form" model="ir.ui.view">
+    <field name="name">stajyer.meeting.form</field>
+    <field name="model">stajyer.meeting</field>
+    <field name="arch" type="xml">
+      <form string="Görüşme">
+        <header>
+          <field name="state" widget="statusbar" statusbar_visible="pending,accepted,rejected,expired"/>
+        </header>
+        <sheet>
+          <group>
+            <group>
+              <field name="name"/>
+              <field name="user_id"/>
+              <field name="date"/>
+              <field name="time" widget="float_time"/>
+            </group>
+            <group>
+              <field name="state"/>
+            </group>
+          </group>
+          <notebook>
+            <page string="Notlar">
+              <field name="note"/>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- Meeting Search View -->
+  <record id="view_stajyer_meeting_search" model="ir.ui.view">
+    <field name="name">stajyer.meeting.search</field>
+    <field name="model">stajyer.meeting</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="name"/>
+        <field name="user_id"/>
+        <filter string="Bekleyenler" name="filter_pending" domain="[('state','=','pending')]"/>
+        <filter string="Kabul Edilenler" name="filter_accepted" domain="[('state','=','accepted')]"/>
+        <filter string="Reddedilenler" name="filter_rejected" domain="[('state','=','rejected')]"/>
+        <filter string="Süresi Dolanlar" name="filter_expired" domain="[('state','=','expired')]"/>
+        <group expand="0" string="Grupla">
+          <filter string="Durum" name="group_state" context="{'group_by':'state'}"/>
+          <filter string="Kullanıcı" name="group_user" context="{'group_by':'user_id'}"/>
+          <filter string="Tarih" name="group_date" context="{'group_by':'date'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <!-- Meeting Action -->
+  <record id="action_stajyer_meeting" model="ir.actions.act_window">
+    <field name="name">Görüşmeler</field>
+    <field name="res_model">stajyer.meeting</field>
+    <field name="view_mode">list,form,calendar</field>
+    <field name="context">{}</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Henüz görüşme yok!</p>
+      <p>Stajyer görüşmelerini burada yönetin.</p>
+    </field>
+  </record>
+  
+  <!-- Meeting Calendar View -->
+  <record id="view_stajyer_meeting_calendar" model="ir.ui.view">
+    <field name="name">stajyer.meeting.calendar</field>
+    <field name="model">stajyer.meeting</field>
+    <field name="arch" type="xml">
+      <calendar string="Görüşmeler" date_start="date" color="state" mode="month">
+        <field name="name"/>
+        <field name="user_id"/>
+        <field name="state"/>
+      </calendar>
+    </field>
+  </record>
+
+
+  <!-- ========== STAJYER DAILY WORK (Günlük Çalışmalar) ========== -->
+  
+  <!-- Daily Work List View -->
+  <record id="view_stajyer_daily_work_list" model="ir.ui.view">
+    <field name="name">stajyer.daily.work.list</field>
+    <field name="model">stajyer.daily.work</field>
+    <field name="arch" type="xml">
+      <list string="Günlük Çalışmalar">
+        <field name="user_id"/>
+        <field name="date"/>
+        <field name="description"/>
+        <field name="create_date"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Daily Work Form View -->
+  <record id="view_stajyer_daily_work_form" model="ir.ui.view">
+    <field name="name">stajyer.daily.work.form</field>
+    <field name="model">stajyer.daily.work</field>
+    <field name="arch" type="xml">
+      <form string="Günlük Çalışma">
+        <sheet>
+          <group>
+            <group>
+              <field name="user_id"/>
+              <field name="date"/>
+            </group>
+          </group>
+          <notebook>
+            <page string="Açıklama">
+              <field name="description"/>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- Daily Work Search View -->
+  <record id="view_stajyer_daily_work_search" model="ir.ui.view">
+    <field name="name">stajyer.daily.work.search</field>
+    <field name="model">stajyer.daily.work</field>
+    <field name="arch" type="xml">
+      <search>
+        <field name="user_id"/>
+        <field name="date"/>
+        <filter string="Bugün" name="filter_today" domain="[('date','=', context_today().strftime('%Y-%m-%d'))]"/>
+        <filter string="Bu Hafta" name="filter_week" domain="[('date','&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]"/>
+        <group expand="0" string="Grupla">
+          <filter string="Kullanıcı" name="group_user" context="{'group_by':'user_id'}"/>
+          <filter string="Tarih" name="group_date" context="{'group_by':'date'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <!-- Daily Work Action -->
+  <record id="action_stajyer_daily_work" model="ir.actions.act_window">
+    <field name="name">Günlük Çalışmalar</field>
+    <field name="res_model">stajyer.daily.work</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">Henüz günlük çalışma kaydı yok!</p>
+      <p>Stajyerlerin günlük çalışmalarını burada takip edin.</p>
+    </field>
+  </record>
+
+
+  <!-- ========== STAJYER DEPARTMENT (Departmanlar) ========== -->
+  
+  <!-- Department List View -->
+  <record id="view_stajyer_department_list" model="ir.ui.view">
+    <field name="name">stajyer.department.list</field>
+    <field name="model">stajyer.department</field>
+    <field name="arch" type="xml">
+      <list string="Departmanlar" editable="bottom">
+        <field name="name"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- Department Form View -->
+  <record id="view_stajyer_department_form" model="ir.ui.view">
+    <field name="name">stajyer.department.form</field>
+    <field name="model">stajyer.department</field>
+    <field name="arch" type="xml">
+      <form string="Departman">
+        <sheet>
+          <group>
+            <field name="name"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- Department Action -->
+  <record id="action_stajyer_department" model="ir.actions.act_window">
+    <field name="name">Departmanlar</field>
+    <field name="res_model">stajyer.department</field>
+    <field name="view_mode">list,form</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">İlk departmanı ekleyin!</p>
+    </field>
+  </record>
+
+</odoo>

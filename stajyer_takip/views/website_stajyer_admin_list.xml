@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <template id="website_stajyer_admin_list" name="Stajyer Admin List">
+    <t t-call="website.layout">
+      <div class="container" style="margin-top:2.5rem;">
+        <h2>Tüm Stajyerler</h2>
+
+        
+        <t t-if="is_admin">
+          <div class="mb-3">
+            <form id="stajyer-admin-list-form" class="form-inline" role="form">
+              <label for="stajyer-admin-list-select" class="sr-only">Stajyer seç</label>
+              <select id="stajyer-admin-list-select" name="stajyer_id" class="form-control" style="min-width:320px; display:inline-block; margin-right:8px;">
+                <option value="">-- Stajyer seç --</option>
+                <t t-foreach="stajyers" t-as="s">
+                  <option t-att-value="s.id">
+                    <t t-esc="s.name"/> <t t-if="s.email">(<t t-esc="s.email"/>)</t>
+                  </option>
+                </t>
+              </select>
+              <button type="submit" class="btn btn-primary btn-sm" style="margin-top:4px;">Aç</button>
+            </form>
+          </div>
+        </t>
+
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Ad</th>
+              <th>E-posta</th>
+              <th>Durum</th>
+              <th>Başlangıç</th>
+              <th>Bitiş</th>
+              <th>Mentör</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody>
+            <t t-foreach="stajyers" t-as="s">
+              <tr>
+                <td><t t-esc="s.name"/></td>
+                <td><t t-esc="s.email or '-'"/></td>
+                <td><t t-esc="s.status or '-'"/></td>
+                <td><t t-esc="s.start_date or '-'"/></td>
+                <td><t t-esc="s.end_date or '-'"/></td>
+                <td><t t-esc="s.mentor_id.name or '-'"/></td>
+                <td>
+                  <a t-att-href="'/stajyer/profile?id=%s' % s.id" class="btn btn-sm btn-outline-primary">Aç / Düzenle</a>
+                </td>
+              </tr>
+            </t>
+          </tbody>
+        </table>
+      </div>
+
+      <script>
+        (function () {
+          var form = document.querySelector('#stajyer-admin-list-form');
+          if (!form) return;
+          var select = form.querySelector('#stajyer-admin-list-select');
+          function go(id){
+            id = (id||'').trim();
+            if (!id) return;
+            window.location.href = '/stajyer/profile?id=' + encodeURIComponent(id);
+          }
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            go(select.value);
+          });
+          select.addEventListener('change', function () {
+            go(this.value);
+          });
+        })();
+      </script>
+    </t>
+  </template>
+</odoo>

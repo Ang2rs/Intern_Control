@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="s_stajyer_hero" name="Stajyer Hero">
+        <section class="s_travel_hero">
+            <div class="hero-content">
+                <h1>Kariyerini <span class="wavy-highlight">Şekillendir</span></h1>
+                <p class="lead">Gerçek projelerle deneyim kazan, mentör desteğiyle geleceğin teknolojilerine bugünden hazırlan.</p>
+                <a href="/stajyer/basvuru" class="btn-explore">Başvuruyu Tamamla</a>
+            </div>
+            <div class="hero-visuals">
+                <div class="hero-img-grid">
+                    <img src="/web/image/website.s_blockquote_default_image" class="img-fluid" alt="Stajyer Takip"/>
+                </div>
+                <div class="testimonial-card">
+                    <p>"Staj programı kariyerimde dönüm noktası oldu. Harika bir ekipti!"</p>
+                    <div class="user-info">
+                         <img src="/web/image/website.s_blockquote_default_image" class="user-avatar" alt="User"/>
+                         <div class="user-details">
+                             <h5>Ahmet Yılmaz</h5>
+                             <span>Yazılım Mühendisi ~ Google</span>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </template>
+</odoo>

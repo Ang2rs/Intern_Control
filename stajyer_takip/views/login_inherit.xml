@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <template id="web_login_add_signup_link" inherit_id="web.login" name="Web Login - Signup link">
+    <xpath expr="//button[@type='submit']" position="after">
+      <div class="text-center mt-2">
+        <p class="small mb-0">Hesabınız yok mu? <a href="/stajyer/signup">Kayıt Ol</a></p>
+      </div>
+    </xpath>
+    <xpath expr="//form" position="inside">
+        <style>
+            .field-db, div:has(> label[for='db']) { display: none !important; }
+            a[href*='/web/login/superuser'] { display: none !important; }
+        </style>
+    </xpath>
+  </template>
+</odoo>
